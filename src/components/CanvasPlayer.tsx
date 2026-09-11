@@ -260,8 +260,8 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
             <div className="empty-viewport-hint">
               <p style={{ color: '#00ff66', fontFamily: 'monospace', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
                 Nenhuma mídia carregada.<br />
-                <span style={{ color: '#66fcf1' }}>[📥 ARRASTE & SOLTE UMA IMAGEM, GIF OU VÍDEO AQUI]</span><br />
-                ou clique em [📂 Abrir Mídia]
+                <span style={{ color: '#ffffff' }}>[ARRASTE E SOLTE UMA IMAGEM, GIF OU VÍDEO AQUI]</span><br />
+                ou clique em [Abrir Mídia]
               </p>
             </div>
           )}
@@ -269,7 +269,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
           {/* OSD Verde Retrô */}
           {media && (
             <div className="osd-tag">
-              {media.type === 'video' ? (isPlaying ? '▶ PLAY' : '❚❚ PAUSE') : media.type === 'gif' ? '⚡ GIF ANIMATED' : '📷 IMAGE'}
+              {media.type === 'video' ? (isPlaying ? '▶ PLAY' : '❚❚ PAUSE') : media.type === 'gif' ? ' GIF ANIMATED' : ' IMAGE'}
               {' • '}DITHER: {config.dithering.enabled ? config.dithering.algorithm.toUpperCase() : 'OFF'}
               {' • '}PALETTE: {config.dithering.preset.toUpperCase()}
             </div>
@@ -311,7 +311,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
 
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
             <button onClick={exportSnapshot} title="Salvar Frame como PNG" disabled={!media || isRecording}>
-              💾 Frame (PNG)
+               Frame (PNG)
             </button>
 
             {isAnimatable && (
@@ -321,7 +321,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
                 </button>
               ) : (
                 <button onClick={startVideoRecording} style={{ fontWeight: 'bold' }}>
-                  🎥 Gravar .WEBM
+                  Gravar .WEBM
                 </button>
               )
             )}
