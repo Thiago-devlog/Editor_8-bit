@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MediaSource, PipelineConfig } from '../types/pipeline';
 import { VideoPipelineEngine } from '../engine/videoPipelineEngine';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Download, Video, Square } from 'lucide-react';
 
 interface CanvasPlayerProps {
   media: MediaSource | null;
   config: PipelineConfig;
+  onExportPngTrigger?: (exportFn: () => void) => void;
 }
 
-export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => {
+export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExportPngTrigger }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,9 +18,9 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [isMuted, setIsMuted] = useState<boolean>(true);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordingProgress, setRecordingProgress] = useState<number>(0);
+  const [currentTimeStr, setCurrentTimeStr] = useState<string>('00:00');
 
   // Sincroniza a configuração com a Ref mutável
   useEffect(() => {
@@ -29,6 +29,13 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
       engineRef.current.forceRender();
     }
   }, [config]);
+
+  // Expõe a função de exportação de frame PNG para o componente pai
+  useEffect(() => {
+    if (onExportPngTrigger) {
+      onExportPngTrigger(() => exportSnapshot());
+    }
+  }, [onExportPngTrigger]);
 
   // Inicializa o Engine quando a mídia muda
   useEffect(() => {
@@ -69,12 +76,6 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     }
   };
 
-  const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
-  };
-
   const restartVideo = () => {
     if (!videoRef.current) return;
     videoRef.current.currentTime = 0;
@@ -82,7 +83,6 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     setIsPlaying(true);
   };
 
-  // Exportar Frame Estático em PNG
   const exportSnapshot = () => {
     if (!canvasRef.current) return;
     const link = document.createElement('a');
@@ -91,7 +91,6 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     link.click();
   };
 
-  // Exportar Vídeo Completo ou GIF animado gravado (.webm)
   const startVideoRecording = async () => {
     if (!canvasRef.current || !media) return;
 
@@ -107,16 +106,14 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
 
     if (media.type === 'video' && videoRef.current) {
       try {
-        // @ts-expect-error captureStream pode existir no HTMLVideoElement em navegadores compatíveis
+        // @ts-expect-error captureStream pode existir no HTMLVideoElement
         const videoStream = videoRef.current.captureStream ? videoRef.current.captureStream() : videoRef.current.mozCaptureStream ? videoRef.current.mozCaptureStream() : null;
         if (videoStream) {
           const audioTracks = videoStream.getAudioTracks();
-          if (audioTracks.length > 0) {
-            stream.addTrack(audioTracks[0]);
-          }
+          if (audioTracks.length > 0) stream.addTrack(audioTracks[0]);
         }
       } catch {
-        // Fallback sem áudio
+        // Fallback
       }
     }
 
@@ -132,9 +129,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     const mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
 
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
+      if (e.data.size > 0) chunks.push(e.data);
     };
 
     mediaRecorder.onstop = () => {
@@ -150,7 +145,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     };
 
     let startTime = performance.now();
-    let duration = 5000; // Padrão 5s se for GIF animado
+    let duration = 5000;
 
     if (media.type === 'video' && videoRef.current && videoRef.current.duration) {
       duration = videoRef.current.duration * 1000;
@@ -165,9 +160,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
 
       if (elapsed >= duration) {
         clearInterval(interval);
-        if (mediaRecorder.state !== 'inactive') {
-          mediaRecorder.stop();
-        }
+        if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       }
     }, 100);
 
@@ -182,92 +175,114 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     }
   };
 
+  const handleTimeUpdate = () => {
+    if (!videoRef.current) return;
+    const sec = Math.floor(videoRef.current.currentTime);
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    setCurrentTimeStr(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+  };
+
   if (!media) {
     return (
-      <div className="canvas-placeholder">
-        <p className="placeholder-text">Nenhuma mídia carregada. Faça upload acima para começar!</p>
-      </div>
+      <section className="viewport-section">
+        <div className="sunken-bezel-container">
+          <div className="crt-screen-monitor" style={{ minHeight: '320px' }}>
+            <p style={{ color: '#00ff66', fontFamily: 'monospace', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
+              Nenhuma mídia carregada.<br />Clique em [📂 Abrir] ou faça upload para iniciar o Engine 8-Bit!
+            </p>
+          </div>
+        </div>
+      </section>
     );
   }
 
   const isAnimatable = media.type === 'video' || (media.type === 'gif' && media.gifData && media.gifData.frames.length > 1);
 
   return (
-    <div className="canvas-player-wrapper">
-      {media.type === 'video' ? (
-        <video
-          ref={videoRef}
-          src={media.url}
-          loop={!isRecording}
-          muted={isMuted}
-          playsInline
-          autoPlay
-          style={{ display: 'none' }}
-        />
-      ) : (
-        <img
-          ref={imageRef}
-          src={media.url}
-          alt="Original Source"
-          style={{ display: 'none' }}
-        />
-      )}
+    <section className="viewport-section">
+      <div className="sunken-bezel-container">
+        {/* Moldura CRT Preta com o Canvas */}
+        <div className="crt-screen-monitor">
+          {media.type === 'video' ? (
+            <video
+              ref={videoRef}
+              src={media.url}
+              loop={!isRecording}
+              muted
+              playsInline
+              autoPlay
+              onTimeUpdate={handleTimeUpdate}
+              style={{ display: 'none' }}
+            />
+          ) : (
+            <img
+              ref={imageRef}
+              src={media.url}
+              alt="Original Source"
+              style={{ display: 'none' }}
+            />
+          )}
 
-      <div className="canvas-container">
-        <canvas
-          ref={canvasRef}
-          className="main-canvas"
-          style={{
-            imageRendering: 'pixelated'
-          }}
-        />
+          {/* Canvas Nativo 8-Bit */}
+          <canvas
+            ref={canvasRef}
+            width={320}
+            height={240}
+            className="pixel-canvas"
+          />
 
-        {isRecording && (
-          <div className="recording-overlay">
-            <div className="recording-badge">
-              <span className="rec-dot pulsing"></span>
-              GRAVANDO ANIMAÇÃO... [{recordingProgress}%]
-            </div>
-            <div className="progress-bar-container">
-              <div className="progress-bar-fill" style={{ width: `${recordingProgress}%` }}></div>
-            </div>
+          {/* OSD Verde Retrô */}
+          <div className="osd-tag">
+            {media.type === 'video' ? (isPlaying ? '▶ PLAY' : '❚❚ PAUSE') : media.type === 'gif' ? '⚡ GIF ANIMATED' : '📷 IMAGE'}
+            {' • '}DITHER: {config.dithering.enabled ? config.dithering.algorithm.toUpperCase() : 'OFF'}
+            {' • '}PALETTE: {config.dithering.preset.toUpperCase()}
           </div>
-        )}
-      </div>
 
-      <div className="player-toolbar">
-        {media.type === 'video' && (
-          <div className="video-controls">
-            <button onClick={togglePlay} className="btn-icon" title={isPlaying ? 'Pausar' : 'Reproduzir'} disabled={isRecording}>
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            </button>
-            <button onClick={restartVideo} className="btn-icon" title="Reiniciar Vídeo" disabled={isRecording}>
-              <RotateCcw size={18} />
-            </button>
-            <button onClick={toggleMute} className="btn-icon" title={isMuted ? 'Ativar Áudio' : 'Mutar'} disabled={isRecording}>
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-          </div>
-        )}
-
-        <div className="export-controls">
-          <button onClick={exportSnapshot} className="btn-secondary" disabled={isRecording}>
-            <Download size={15} /> FRAME (PNG)
-          </button>
-
-          {isAnimatable && (
-            isRecording ? (
-              <button onClick={stopVideoRecording} className="btn-danger">
-                <Square size={15} /> PARAR GRAVAÇÃO
-              </button>
-            ) : (
-              <button onClick={startVideoRecording} className="btn-accent">
-                <Video size={15} /> GRAVAR ANIMAÇÃO (.WEBM)
-              </button>
-            )
+          {/* Overlay REC */}
+          {isRecording && (
+            <div className="win98-recording-overlay">
+              <span className="rec-dot"></span>
+              REC [{recordingProgress}%]
+            </div>
           )}
         </div>
+
+        {/* Barra de Transporte Clássica Windows Media Player 6.4 */}
+        <div className="playback-transport-bar">
+          {media.type === 'video' && (
+            <>
+              <button aria-label="Rewind" onClick={restartVideo} title="Reiniciar">⏮</button>
+              <button aria-label={isPlaying ? 'Pause' : 'Play'} onClick={togglePlay} title={isPlaying ? 'Pausar' : 'Play'}>
+                {isPlaying ? '❚❚' : '▶'}
+              </button>
+              <button aria-label="Stop" onClick={() => { if (videoRef.current) { videoRef.current.pause(); setIsPlaying(false); } }} title="Parar">⏹</button>
+            </>
+          )}
+
+          <span className="timestamp-counter">{currentTimeStr}</span>
+
+          <span style={{ fontSize: '11px', fontWeight: 'bold', marginLeft: '6px' }}>{media.name}</span>
+
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+            <button onClick={exportSnapshot} title="Salvar Frame como PNG" disabled={isRecording}>
+              💾 Frame (PNG)
+            </button>
+
+            {isAnimatable && (
+              isRecording ? (
+                <button onClick={stopVideoRecording} style={{ background: '#ff3333', color: '#fff', fontWeight: 'bold' }}>
+                  ⏹ Parar REC
+                </button>
+              ) : (
+                <button onClick={startVideoRecording} style={{ fontWeight: 'bold' }}>
+                  🎥 Gravar .WEBM
+                </button>
+              )
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };

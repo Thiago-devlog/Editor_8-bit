@@ -1,13 +1,14 @@
 import React from 'react';
 import { PipelineConfig, DitheringAlgorithm, PalettePreset } from '../types/pipeline';
-import { Grid, Sun, Tv, Palette, Zap } from 'lucide-react';
 
 interface ControlsPanelProps {
   config: PipelineConfig;
   onChange: (newConfig: PipelineConfig) => void;
+  onReset: () => void;
+  onExportPng: () => void;
 }
 
-export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange }) => {
+export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange, onReset, onExportPng }) => {
   const updateResolution = (fields: Partial<PipelineConfig['resolution']>) => {
     onChange({
       ...config,
@@ -44,209 +45,203 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange }
   };
 
   return (
-    <div className="controls-panel">
-      {/* 1. Controle de Resolução / Pixelização */}
-      <div className="control-card">
-        <div className="card-header">
-          <Grid size={18} className="text-cyan" />
-          <h3>Resolução Interna (Pixelização)</h3>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={config.resolution.enabled}
-              onChange={(e) => updateResolution({ enabled: e.target.checked })}
-            />
-            <span className="slider-toggle"></span>
-          </label>
-        </div>
-
-        {config.resolution.enabled && (
-          <div className="card-body">
-            <div className="slider-row">
-              <label>
-                Altura Alvo: <strong>{config.resolution.targetHeight}p</strong>
-              </label>
-              <input
-                type="range"
-                min={72}
-                max={480}
-                step={18}
-                value={config.resolution.targetHeight}
-                onChange={(e) => updateResolution({ targetHeight: Number(e.target.value) })}
-              />
-            </div>
-            <p className="field-hint">
-              Processar em {config.resolution.targetHeight}p reduz drasticamente o uso de CPU e gera a estética de pixel art nítida.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* 2. Algoritmo de Dithering */}
-      <div className="control-card">
-        <div className="card-header">
-          <Palette size={18} className="text-pink" />
-          <h3>Algoritmo de Dithering</h3>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={config.dithering.enabled}
-              onChange={(e) => updateDithering({ enabled: e.target.checked })}
-            />
-            <span className="slider-toggle"></span>
-          </label>
+    <aside className="controls-sidebar">
+      {/* Fieldset 1: Algoritmos e Resolução */}
+      <fieldset>
+        <legend>Algoritmo de Dithering</legend>
+        <div className="field-row">
+          <input
+            type="checkbox"
+            id="check-dither-enable"
+            checked={config.dithering.enabled}
+            onChange={(e) => updateDithering({ enabled: e.target.checked })}
+          />
+          <label htmlFor="check-dither-enable">Ativar Dithering</label>
         </div>
 
         {config.dithering.enabled && (
-          <div className="card-body">
-            <div className="form-group">
-              <label>Algoritmo:</label>
+          <>
+            <div className="field-row" style={{ marginTop: '6px' }}>
+              <label htmlFor="algo-select" style={{ width: '85px' }}>Algoritmo:</label>
               <select
+                id="algo-select"
                 value={config.dithering.algorithm}
                 onChange={(e) => updateDithering({ algorithm: e.target.value as DitheringAlgorithm })}
+                style={{ flex: 1 }}
               >
                 <option value="bayer4x4">Matriz Bayer 4x4 (Ordenado)</option>
                 <option value="bayer8x8">Matriz Bayer 8x8 (Ordenado Fino)</option>
-                <option value="floydSteinberg">Floyd-Steinberg (Difusão de Erro)</option>
-                <option value="atkinson">Atkinson (Macintosh Clássico)</option>
-                <option value="none">Sem Dithering (Quantização Pura)</option>
+                <option value="floydSteinberg">Floyd-Steinberg (Difusão Error)</option>
+                <option value="atkinson">Atkinson (MacPaint Clássico)</option>
+                <option value="none">Threshold (Sem Dithering)</option>
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Preset de Paleta Retro:</label>
+            <div className="field-row" style={{ marginTop: '6px' }}>
+              <label htmlFor="palette-select" style={{ width: '85px' }}>Paleta 8-Bit:</label>
               <select
+                id="palette-select"
                 value={config.dithering.preset}
                 onChange={(e) => updateDithering({ preset: e.target.value as PalettePreset })}
+                style={{ flex: 1 }}
               >
-                <option value="fullColor">Cores Livres (Quantizadas)</option>
-                <option value="gameboy">Nintendo Game Boy (4 Verdes)</option>
-                <option value="cga">IBM CGA Retro (Cyan / Magenta)</option>
+                <option value="fullColor">Cores Livres Quantizadas</option>
+                <option value="gameboy">Game Boy Classic (4 Verdes)</option>
+                <option value="cga">IBM CGA Retro (Cyan / Pink)</option>
                 <option value="cyberpunk">Cyberpunk Neon (5 Cores)</option>
                 <option value="vaporwave">Vaporwave Aesthetic (5 Cores)</option>
               </select>
             </div>
 
             {config.dithering.preset === 'fullColor' && (
-              <div className="slider-row">
-                <label>
-                  Níveis por Canal: <strong>{config.dithering.colorPaletteSize}</strong>
-                </label>
+              <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+                <div className="slider-header">
+                  <label htmlFor="levels-slider">Cores por Canal:</label>
+                  <span className="value-tag">{config.dithering.colorPaletteSize} Níveis</span>
+                </div>
                 <input
+                  id="levels-slider"
                   type="range"
-                  min={2}
-                  max={16}
-                  step={1}
+                  min="2"
+                  max="16"
                   value={config.dithering.colorPaletteSize}
                   onChange={(e) => updateDithering({ colorPaletteSize: Number(e.target.value) })}
                 />
               </div>
             )}
-          </div>
+          </>
         )}
-      </div>
 
-      {/* 3. Efeitos de Aberração Cromática & Glitch */}
-      <div className="control-card">
-        <div className="card-header">
-          <Zap size={18} className="text-yellow" />
-          <h3>Aberração Cromática (Glitch)</h3>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={config.chromaticAberration.enabled}
-              onChange={(e) => updateChromatic({ enabled: e.target.checked })}
-            />
-            <span className="slider-toggle"></span>
-          </label>
+        <div className="field-row" style={{ marginTop: '8px' }}>
+          <input
+            type="checkbox"
+            id="check-res-enable"
+            checked={config.resolution.enabled}
+            onChange={(e) => updateResolution({ enabled: e.target.checked })}
+          />
+          <label htmlFor="check-res-enable">Reduzir Resolução (Pixel Art)</label>
         </div>
 
-        {config.chromaticAberration.enabled && (
-          <div className="card-body">
-            <div className="slider-row">
-              <label>Deslocamento X: {config.chromaticAberration.offsetX}px</label>
-              <input
-                type="range"
-                min={-15}
-                max={15}
-                step={1}
-                value={config.chromaticAberration.offsetX}
-                onChange={(e) => updateChromatic({ offsetX: Number(e.target.value) })}
-              />
+        {config.resolution.enabled && (
+          <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+            <div className="slider-header">
+              <label htmlFor="res-slider">Altura Alvo:</label>
+              <span className="value-tag">{config.resolution.targetHeight}p px</span>
             </div>
-            <div className="slider-row">
-              <label>Deslocamento Y: {config.chromaticAberration.offsetY}px</label>
-              <input
-                type="range"
-                min={-15}
-                max={15}
-                step={1}
-                value={config.chromaticAberration.offsetY}
-                onChange={(e) => updateChromatic({ offsetY: Number(e.target.value) })}
-              />
-            </div>
+            <input
+              id="res-slider"
+              type="range"
+              min="72"
+              max="480"
+              step="18"
+              value={config.resolution.targetHeight}
+              onChange={(e) => updateResolution({ targetHeight: Number(e.target.value) })}
+            />
           </div>
         )}
-      </div>
+      </fieldset>
 
-      {/* 4. Ajustes Básicos (Brilho & Contraste) */}
-      <div className="control-card">
-        <div className="card-header">
-          <Sun size={18} className="text-green" />
-          <h3>Brilho & Contraste</h3>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={config.adjustments.enabled}
-              onChange={(e) => updateAdjustments({ enabled: e.target.checked })}
-            />
-            <span className="slider-toggle"></span>
-          </label>
+      {/* Fieldset 2: Processamento de Sinal / Cores */}
+      <fieldset>
+        <legend>Processamento de Sinal / Cores</legend>
+        <div className="field-row">
+          <input
+            type="checkbox"
+            id="check-adj-enable"
+            checked={config.adjustments.enabled}
+            onChange={(e) => updateAdjustments({ enabled: e.target.checked })}
+          />
+          <label htmlFor="check-adj-enable">Ativar Brilho & Contraste</label>
         </div>
 
         {config.adjustments.enabled && (
-          <div className="card-body">
-            <div className="slider-row">
-              <label>Brilho: {config.adjustments.brightness}</label>
+          <>
+            <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+              <div className="slider-header">
+                <label htmlFor="bright-slider">Brilho (Bias):</label>
+                <span className="value-tag">{config.adjustments.brightness > 0 ? `+${config.adjustments.brightness}` : config.adjustments.brightness}%</span>
+              </div>
               <input
+                id="bright-slider"
                 type="range"
-                min={-80}
-                max={80}
-                step={2}
+                min="-80"
+                max="80"
+                step="2"
                 value={config.adjustments.brightness}
                 onChange={(e) => updateAdjustments({ brightness: Number(e.target.value) })}
               />
             </div>
-            <div className="slider-row">
-              <label>Contraste: {config.adjustments.contrast}</label>
+
+            <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+              <div className="slider-header">
+                <label htmlFor="contrast-slider">Contraste (Curva):</label>
+                <span className="value-tag">{config.adjustments.contrast > 0 ? `+${config.adjustments.contrast}` : config.adjustments.contrast}%</span>
+              </div>
               <input
+                id="contrast-slider"
                 type="range"
-                min={-80}
-                max={80}
-                step={2}
+                min="-80"
+                max="80"
+                step="2"
                 value={config.adjustments.contrast}
                 onChange={(e) => updateAdjustments({ contrast: Number(e.target.value) })}
               />
             </div>
+          </>
+        )}
+
+        <div className="field-row" style={{ marginTop: '8px' }}>
+          <input
+            type="checkbox"
+            id="check-chroma-enable"
+            checked={config.chromaticAberration.enabled}
+            onChange={(e) => updateChromatic({ enabled: e.target.checked })}
+          />
+          <label htmlFor="check-chroma-enable">Aberração Cromática (Glitch)</label>
+        </div>
+
+        {config.chromaticAberration.enabled && (
+          <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+            <div className="slider-header">
+              <label htmlFor="chroma-slider">RGB Shift Offset:</label>
+              <span className="value-tag">{config.chromaticAberration.offsetX} px</span>
+            </div>
+            <input
+              id="chroma-slider"
+              type="range"
+              min="0"
+              max="12"
+              step="1"
+              value={config.chromaticAberration.offsetX}
+              onChange={(e) => updateChromatic({ offsetX: Number(e.target.value), offsetY: 0 })}
+            />
           </div>
         )}
-      </div>
+      </fieldset>
 
-      {/* 5. Linhas de Varredura CRT */}
-      <div className="control-card">
-        <div className="card-header">
-          <Tv size={18} className="text-purple" />
-          <h3>Efeito Monitor CRT (Scanlines)</h3>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={config.crtEffect}
-              onChange={toggleCrt}
-            />
-            <span className="slider-toggle"></span>
-          </label>
+      {/* Fieldset 3: Efeitos Analógicos / CRT */}
+      <fieldset>
+        <legend>Efeitos CRT & Simulação</legend>
+        <div className="field-row">
+          <input
+            type="checkbox"
+            id="check-scanlines"
+            checked={config.crtEffect}
+            onChange={toggleCrt}
+          />
+          <label htmlFor="check-scanlines">Scanlines interlaçadas CRT (50%)</label>
         </div>
+      </fieldset>
+
+      {/* Botões de Ação Win98 */}
+      <div className="action-buttons-group">
+        <button style={{ flex: 1 }} onClick={onReset}>
+          Resetar
+        </button>
+        <button style={{ flex: 1, fontWeight: 'bold' }} onClick={onExportPng}>
+          Exportar Frame
+        </button>
       </div>
-    </div>
+    </aside>
   );
 };

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "98.css": "^0.1.21",
     "gifuct-js": "^2.1.2",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
