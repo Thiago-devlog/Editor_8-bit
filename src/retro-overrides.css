@@ -19,7 +19,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #3a88e9 0%, #7db9f7 45%, #9fd5ff 55%, #66ab29 56%, #4b8818 70%, #305b0e 100%);
+  background: url("https://cdn.wallpaperhub.app/cloudcache/6/9/0/e/e/f/690eefe3ba1f553e0ea527f51ee407b604b681b4.jpg") no-repeat center center / cover,
+              linear-gradient(180deg, #3a88e9 0%, #7db9f7 45%, #9fd5ff 55%, #66ab29 56%, #4b8818 70%, #305b0e 100%);
   padding-bottom: 30px; /* Espaço para a Taskbar inferior */
 }
 
