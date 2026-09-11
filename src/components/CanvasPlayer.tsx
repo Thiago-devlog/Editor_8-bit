@@ -6,9 +6,15 @@ interface CanvasPlayerProps {
   media: MediaSource | null;
   config: PipelineConfig;
   onExportPngTrigger?: (exportFn: () => void) => void;
+  onFileDrop?: (file: File) => void;
 }
 
-export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExportPngTrigger }) => {
+export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
+  media,
+  config,
+  onExportPngTrigger,
+  onFileDrop
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,6 +27,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExp
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordingProgress, setRecordingProgress] = useState<number>(0);
   const [currentTimeStr, setCurrentTimeStr] = useState<string>('00:00');
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
 
   // Sincroniza a configuração com a Ref mutável
   useEffect(() => {
@@ -183,28 +190,44 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExp
     setCurrentTimeStr(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
   };
 
-  if (!media) {
-    return (
-      <section className="viewport-section">
-        <div className="sunken-bezel-container">
-          <div className="crt-screen-monitor" style={{ minHeight: '320px' }}>
-            <p style={{ color: '#00ff66', fontFamily: 'monospace', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
-              Nenhuma mídia carregada.<br />Clique em [📂 Abrir] ou faça upload para iniciar o Engine 8-Bit!
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // Handlers para Drag & Drop na Tela Preta
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) setIsDragOver(true);
+  };
 
-  const isAnimatable = media.type === 'video' || (media.type === 'gif' && media.gifData && media.gifData.frames.length > 1);
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && onFileDrop) {
+      onFileDrop(file);
+    }
+  };
+
+  const isAnimatable = media ? (media.type === 'video' || (media.type === 'gif' && media.gifData && media.gifData.frames.length > 1)) : false;
 
   return (
     <section className="viewport-section">
       <div className="sunken-bezel-container">
-        {/* Moldura CRT Preta com o Canvas */}
-        <div className="crt-screen-monitor">
-          {media.type === 'video' ? (
+        {/* Moldura CRT Preta com Drag & Drop */}
+        <div
+          className={`crt-screen-monitor ${isDragOver ? 'drag-active' : ''}`}
+          style={{ minHeight: media ? 'auto' : '320px' }}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {media?.type === 'video' ? (
             <video
               ref={videoRef}
               src={media.url}
@@ -215,14 +238,14 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExp
               onTimeUpdate={handleTimeUpdate}
               style={{ display: 'none' }}
             />
-          ) : (
+          ) : media ? (
             <img
               ref={imageRef}
               src={media.url}
               alt="Original Source"
               style={{ display: 'none' }}
             />
-          )}
+          ) : null}
 
           {/* Canvas Nativo 8-Bit */}
           <canvas
@@ -230,14 +253,37 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExp
             width={320}
             height={240}
             className="pixel-canvas"
+            style={{ display: media ? 'block' : 'none' }}
           />
 
+          {!media && !isDragOver && (
+            <div className="empty-viewport-hint">
+              <p style={{ color: '#00ff66', fontFamily: 'monospace', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
+                Nenhuma mídia carregada.<br />
+                <span style={{ color: '#66fcf1' }}>[📥 ARRASTE & SOLTE UMA IMAGEM, GIF OU VÍDEO AQUI]</span><br />
+                ou clique em [📂 Abrir Mídia]
+              </p>
+            </div>
+          )}
+
           {/* OSD Verde Retrô */}
-          <div className="osd-tag">
-            {media.type === 'video' ? (isPlaying ? '▶ PLAY' : '❚❚ PAUSE') : media.type === 'gif' ? '⚡ GIF ANIMATED' : '📷 IMAGE'}
-            {' • '}DITHER: {config.dithering.enabled ? config.dithering.algorithm.toUpperCase() : 'OFF'}
-            {' • '}PALETTE: {config.dithering.preset.toUpperCase()}
-          </div>
+          {media && (
+            <div className="osd-tag">
+              {media.type === 'video' ? (isPlaying ? '▶ PLAY' : '❚❚ PAUSE') : media.type === 'gif' ? '⚡ GIF ANIMATED' : '📷 IMAGE'}
+              {' • '}DITHER: {config.dithering.enabled ? config.dithering.algorithm.toUpperCase() : 'OFF'}
+              {' • '}PALETTE: {config.dithering.preset.toUpperCase()}
+            </div>
+          )}
+
+          {/* Overlay de Feedback ao Arrastar Arquivo */}
+          {isDragOver && (
+            <div className="crt-drag-overlay">
+              <div className="drag-overlay-box">
+                <span style={{ fontSize: '32px' }}>📥</span>
+                <p>SOLTE O ARQUIVO AQUI PARA CARREGAR</p>
+              </div>
+            </div>
+          )}
 
           {/* Overlay REC */}
           {isRecording && (
@@ -250,7 +296,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExp
 
         {/* Barra de Transporte Clássica Windows Media Player 6.4 */}
         <div className="playback-transport-bar">
-          {media.type === 'video' && (
+          {media?.type === 'video' && (
             <>
               <button aria-label="Rewind" onClick={restartVideo} title="Reiniciar">⏮</button>
               <button aria-label={isPlaying ? 'Pause' : 'Play'} onClick={togglePlay} title={isPlaying ? 'Pausar' : 'Play'}>
@@ -261,11 +307,10 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config, onExp
           )}
 
           <span className="timestamp-counter">{currentTimeStr}</span>
-
-          <span style={{ fontSize: '11px', fontWeight: 'bold', marginLeft: '6px' }}>{media.name}</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', marginLeft: '6px' }}>{media ? media.name : 'Sem Mídia'}</span>
 
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
-            <button onClick={exportSnapshot} title="Salvar Frame como PNG" disabled={isRecording}>
+            <button onClick={exportSnapshot} title="Salvar Frame como PNG" disabled={!media || isRecording}>
               💾 Frame (PNG)
             </button>
 

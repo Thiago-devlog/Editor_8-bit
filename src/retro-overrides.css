@@ -20,6 +20,7 @@ html, body {
   align-items: center;
   justify-content: center;
   background: linear-gradient(180deg, #3a88e9 0%, #7db9f7 45%, #9fd5ff 55%, #66ab29 56%, #4b8818 70%, #305b0e 100%);
+  padding-bottom: 30px; /* Espaço para a Taskbar inferior */
 }
 
 /* Ícones da Área de Trabalho */
@@ -60,10 +61,10 @@ html, body {
 
 /* Janela Principal (Estilo Win98 / Windows Media Player 6.4) */
 .main-app-window {
-  width: 1020px;
+  width: 1040px;
   max-width: 98vw;
-  height: 94vh;
-  max-height: 94vh;
+  height: calc(94vh - 30px);
+  max-height: calc(94vh - 30px);
   display: flex;
   flex-direction: column;
   box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.5);
@@ -227,6 +228,36 @@ html, body {
   border-left: 2px solid #000;
   border-right: 2px solid #808080;
   border-bottom: 2px solid #808080;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.crt-screen-monitor.drag-active {
+  border-color: #00ff66 !important;
+  background-color: #052010 !important;
+}
+
+.crt-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 50, 20, 0.85);
+  border: 2px dashed #00ff66;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.drag-overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #00ff66;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
 }
 
 .pixel-canvas {
@@ -315,15 +346,168 @@ html, body {
   flex: 1;
 }
 
-.dropzone-win98 {
-  border: 2px dashed #808080;
-  background: #ffffff;
-  padding: 16px;
-  text-align: center;
+/* BARRA DE TAREFAS INFERIOR (TASKBAR WINDOWS 98) */
+.win98-taskbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+  z-index: 9999;
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.taskbar-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.start-button {
+  height: 22px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  background: #c0c0c0;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
   cursor: pointer;
 }
 
-.dropzone-win98:hover {
-  background: #e6f2ff;
-  border-color: #000080;
+.start-button.active, .start-button:active {
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  background: #b4b4b4;
+}
+
+.start-icon {
+  font-size: 13px;
+}
+
+.taskbar-divider {
+  width: 1px;
+  height: 18px;
+  background: #808080;
+  border-right: 1px solid #ffffff;
+  margin: 0 2px;
+}
+
+.taskbar-item {
+  height: 22px;
+  max-width: 200px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  background: #c0c0c0;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.taskbar-item.active {
+  background: #e2e2e2;
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  font-weight: bold;
+}
+
+.task-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* System Tray (Bandeja do Sistema) */
+.system-tray {
+  height: 22px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #c0c0c0;
+  border-top: 1px solid #808080;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+  font-size: 11px;
+}
+
+.system-tray-clock {
+  font-family: "MS Sans Serif", Arial, sans-serif;
+  font-size: 11px;
+}
+
+/* Menu Iniciar Popup */
+.start-menu-popup {
+  position: absolute;
+  bottom: 28px;
+  left: 2px;
+  width: 190px;
+  background: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  display: flex;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+}
+
+.start-menu-sidebar {
+  width: 26px;
+  background: linear-gradient(180deg, #000080 0%, #1084d0 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+
+  color: #ffffff;
+  font-family: sans-serif;
+  font-size: 14px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.start-menu-items {
+  flex: 1;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.start-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.start-menu-item:hover {
+  background: #000080;
+  color: #ffffff;
+}
+
+.start-menu-divider {
+  height: 1px;
+  background: #808080;
+  border-bottom: 1px solid #ffffff;
+  margin: 4px 0;
 }

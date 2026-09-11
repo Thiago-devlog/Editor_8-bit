@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { CanvasPlayer } from './components/CanvasPlayer';
 import { ControlsPanel } from './components/ControlsPanel';
+import { Taskbar } from './components/Taskbar';
 import { MediaSource, PipelineConfig } from './types/pipeline';
 import { decodeGif } from './engine/gifDecoder';
 
@@ -170,10 +171,11 @@ export function App() {
             media={media}
             config={config}
             onExportPngTrigger={(fn) => { exportPngTriggerRef.current = fn; }}
+            onFileDrop={processFile}
           />
         </div>
 
-        {/* BARRA DE STATUS INFERIOR */}
+        {/* BARRA DE STATUS INFERIOR DA JANELA */}
         <footer className="status-bar">
           <p className="status-bar-field status-expand">
             Status: Engine Ready • Pipeline: HTML5 Canvas2D 60FPS
@@ -189,6 +191,12 @@ export function App() {
           </p>
         </footer>
       </div>
+
+      {/* BARRA DE TAREFAS FIXA NA PARTE INFERIOR DA TELA (TASKBAR WIN98) */}
+      <Taskbar
+        activeTitle={media ? `8-Bit Dither Studio - ${media.name}` : '8-Bit Dither Studio'}
+        onOpenMedia={() => fileInputRef.current?.click()}
+      />
     </div>
   );
 }
