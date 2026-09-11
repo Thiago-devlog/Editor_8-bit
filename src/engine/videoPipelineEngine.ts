@@ -1,4 +1,5 @@
 import { PipelineConfig } from '../types/pipeline';
+import { DecodedGif } from './gifDecoder';
 import {
   applyAdjustments,
   applyChromaticAberration,
@@ -10,6 +11,7 @@ import {
 export class VideoPipelineEngine {
   private mediaElement: HTMLVideoElement | HTMLImageElement;
   private isVideo: boolean;
+  private gifData?: DecodedGif;
 
   private displayCanvas: HTMLCanvasElement;
   private displayCtx: CanvasRenderingContext2D;
@@ -21,13 +23,18 @@ export class VideoPipelineEngine {
   private animationFrameId: number | null = null;
   private isRunning: boolean = false;
 
+  private currentGifFrameIndex: number = 0;
+  private lastGifFrameTime: number = 0;
+
   constructor(
     mediaElement: HTMLVideoElement | HTMLImageElement,
     displayCanvas: HTMLCanvasElement,
-    configRef: { current: PipelineConfig }
+    configRef: { current: PipelineConfig },
+    gifData?: DecodedGif
   ) {
     this.mediaElement = mediaElement;
     this.isVideo = mediaElement instanceof HTMLVideoElement;
+    this.gifData = gifData;
     this.displayCanvas = displayCanvas;
     this.configRef = configRef;
 
@@ -43,10 +50,11 @@ export class VideoPipelineEngine {
 
   public start(): void {
     this.isRunning = true;
-    if (this.isVideo) {
+    if (this.isVideo || (this.gifData && this.gifData.frames.length > 1)) {
+      this.lastGifFrameTime = performance.now();
       this.renderLoop();
     } else {
-      // Para imagem estática, processa 1 frame imediatamente
+      // Para imagem estática (ou GIF de 1 frame), processa 1 frame imediatamente
       this.processFrame();
     }
   }
@@ -59,9 +67,6 @@ export class VideoPipelineEngine {
     }
   }
 
-  /**
-   * Força o reprocessamento imediato do frame atual (ex: para imagens estáticas ou quando sliders mudam)
-   */
   public forceRender(): void {
     this.processFrame();
   }
@@ -74,6 +79,14 @@ export class VideoPipelineEngine {
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.paused && !video.ended) {
         this.processFrame();
       }
+    } else if (this.gifData && this.gifData.frames.length > 1) {
+      const now = performance.now();
+      const currentFrame = this.gifData.frames[this.currentGifFrameIndex];
+      if (now - this.lastGifFrameTime >= currentFrame.delay) {
+        this.currentGifFrameIndex = (this.currentGifFrameIndex + 1) % this.gifData.frames.length;
+        this.lastGifFrameTime = now;
+      }
+      this.processFrame();
     }
 
     this.animationFrameId = requestAnimationFrame(this.renderLoop);
@@ -83,13 +96,19 @@ export class VideoPipelineEngine {
     const config = this.configRef.current;
 
     // Resolução original da mídia
-    const sourceWidth = this.isVideo 
-      ? (this.mediaElement as HTMLVideoElement).videoWidth 
-      : (this.mediaElement as HTMLImageElement).naturalWidth;
+    let sourceWidth = 0;
+    let sourceHeight = 0;
 
-    const sourceHeight = this.isVideo 
-      ? (this.mediaElement as HTMLVideoElement).videoHeight 
-      : (this.mediaElement as HTMLImageElement).naturalHeight;
+    if (this.gifData) {
+      sourceWidth = this.gifData.width;
+      sourceHeight = this.gifData.height;
+    } else if (this.isVideo) {
+      sourceWidth = (this.mediaElement as HTMLVideoElement).videoWidth;
+      sourceHeight = (this.mediaElement as HTMLVideoElement).videoHeight;
+    } else {
+      sourceWidth = (this.mediaElement as HTMLImageElement).naturalWidth;
+      sourceHeight = (this.mediaElement as HTMLImageElement).naturalHeight;
+    }
 
     if (!sourceWidth || !sourceHeight) return;
 
@@ -115,21 +134,22 @@ export class VideoPipelineEngine {
       this.displayCanvas.height = targetHeight;
     }
 
-    // 2. Hardware Downscale via Canvas API
-    this.processCtx.drawImage(this.mediaElement, 0, 0, targetWidth, targetHeight);
+    // 2. Desenha a fonte da mídia no Canvas Interno
+    if (this.gifData && this.gifData.frames.length > 0) {
+      const activeFrameCanvas = this.gifData.frames[this.currentGifFrameIndex].canvas;
+      this.processCtx.drawImage(activeFrameCanvas, 0, 0, targetWidth, targetHeight);
+    } else {
+      this.processCtx.drawImage(this.mediaElement, 0, 0, targetWidth, targetHeight);
+    }
 
     // 3. Extrai ImageData
     const imageData = this.processCtx.getImageData(0, 0, targetWidth, targetHeight);
     const data = imageData.data;
 
     // 4. Executa Pipeline Modular de Filtros
-    // Step A: Brilho, Contraste, Saturação
     applyAdjustments(data, targetWidth, targetHeight, config.adjustments);
-
-    // Step B: Aberração Cromática
     applyChromaticAberration(data, targetWidth, targetHeight, config.chromaticAberration);
 
-    // Step C: Algoritmo de Dithering
     if (config.dithering.enabled) {
       switch (config.dithering.algorithm) {
         case 'bayer4x4':

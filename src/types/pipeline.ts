@@ -1,3 +1,5 @@
+import { DecodedGif } from '../engine/gifDecoder';
+
 export type DitheringAlgorithm = 'bayer4x4' | 'bayer8x8' | 'floydSteinberg' | 'atkinson' | 'none';
 
 export type PalettePreset = 'grayscale' | 'gameboy' | 'cga' | 'cyberpunk' | 'vaporwave' | 'fullColor';
@@ -36,8 +38,9 @@ export interface PipelineConfig {
 }
 
 export interface MediaSource {
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'gif';
   url: string;
   name: string;
   aspectRatio: number;
+  gifData?: DecodedGif;
 }

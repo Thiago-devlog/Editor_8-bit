@@ -45,7 +45,8 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     const engine = new VideoPipelineEngine(
       targetMedia,
       canvasRef.current,
-      configRef
+      configRef,
+      media.gifData
     );
 
     engineRef.current = engine;
@@ -90,36 +91,35 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     link.click();
   };
 
-  // Exportar Vídeo Completo (.webm) usando MediaRecorder API
+  // Exportar Vídeo Completo ou GIF animado gravado (.webm)
   const startVideoRecording = async () => {
-    if (!canvasRef.current || !videoRef.current || media?.type !== 'video') return;
+    if (!canvasRef.current || !media) return;
 
-    const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    // 1. Prepara a mídia (reinicia do início)
-    video.currentTime = 0;
-    await video.play();
-    setIsPlaying(true);
-
-    // 2. Captura o stream do Canvas (60 FPS)
-    const stream = canvas.captureStream(60);
-
-    // Tenta capturar a faixa de áudio se disponível
-    try {
-      // @ts-expect-error captureStream pode existir no HTMLVideoElement em navegadores compatíveis
-      const videoStream = video.captureStream ? video.captureStream() : video.mozCaptureStream ? video.mozCaptureStream() : null;
-      if (videoStream) {
-        const audioTracks = videoStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-          stream.addTrack(audioTracks[0]);
-        }
-      }
-    } catch {
-      // Caso o navegador não permita adicionar áudio diretamente ao stream do canvas, grava apenas o vídeo
+    if (media.type === 'video' && videoRef.current) {
+      videoRef.current.currentTime = 0;
+      await videoRef.current.play();
+      setIsPlaying(true);
     }
 
-    // 3. Determina formato MIME compatível com o navegador
+    const stream = canvas.captureStream(60);
+
+    if (media.type === 'video' && videoRef.current) {
+      try {
+        // @ts-expect-error captureStream pode existir no HTMLVideoElement em navegadores compatíveis
+        const videoStream = videoRef.current.captureStream ? videoRef.current.captureStream() : videoRef.current.mozCaptureStream ? videoRef.current.mozCaptureStream() : null;
+        if (videoStream) {
+          const audioTracks = videoStream.getAudioTracks();
+          if (audioTracks.length > 0) {
+            stream.addTrack(audioTracks[0]);
+          }
+        }
+      } catch {
+        // Fallback sem áudio
+      }
+    }
+
     let mimeType = 'video/webm;codecs=vp9';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
       mimeType = 'video/webm;codecs=vp8';
@@ -142,34 +142,37 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `8bit_video_${Date.now()}.webm`;
+      a.download = `8bit_output_${Date.now()}.webm`;
       a.click();
       URL.revokeObjectURL(url);
       setIsRecording(false);
       setRecordingProgress(0);
     };
 
-    // Atualiza progresso da gravação
-    const handleTimeUpdate = () => {
-      if (video.duration) {
-        const progress = Math.min(100, Math.round((video.currentTime / video.duration) * 100));
-        setRecordingProgress(progress);
-      }
-    };
+    let startTime = performance.now();
+    let duration = 5000; // Padrão 5s se for GIF animado
 
-    const handleEnded = () => {
-      if (mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-      }
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('ended', handleEnded);
-    };
+    if (media.type === 'video' && videoRef.current && videoRef.current.duration) {
+      duration = videoRef.current.duration * 1000;
+    } else if (media.type === 'gif' && media.gifData) {
+      duration = media.gifData.frames.reduce((acc, f) => acc + f.delay, 0);
+    }
 
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('ended', handleEnded);
+    const interval = setInterval(() => {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(100, Math.round((elapsed / duration) * 100));
+      setRecordingProgress(progress);
+
+      if (elapsed >= duration) {
+        clearInterval(interval);
+        if (mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+      }
+    }, 100);
 
     mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.start(100); // Coleta dados a cada 100ms
+    mediaRecorder.start(100);
     setIsRecording(true);
   };
 
@@ -187,14 +190,15 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
     );
   }
 
+  const isAnimatable = media.type === 'video' || (media.type === 'gif' && media.gifData && media.gifData.frames.length > 1);
+
   return (
     <div className="canvas-player-wrapper">
-      {/* Elemento oculto do qual o engine lê os frames */}
       {media.type === 'video' ? (
         <video
           ref={videoRef}
           src={media.url}
-          loop={!isRecording} // Não faz loop durante a gravação para parar no final
+          loop={!isRecording}
           muted={isMuted}
           playsInline
           autoPlay
@@ -209,7 +213,6 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
         />
       )}
 
-      {/* Canvas principal onde os pixels 8-bit são desenhados */}
       <div className="canvas-container">
         <canvas
           ref={canvasRef}
@@ -219,12 +222,11 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
           }}
         />
 
-        {/* Overlay de Progresso da Gravação */}
         {isRecording && (
           <div className="recording-overlay">
             <div className="recording-badge">
               <span className="rec-dot pulsing"></span>
-              GRAVANDO VÍDEO... [{recordingProgress}%]
+              GRAVANDO ANIMAÇÃO... [{recordingProgress}%]
             </div>
             <div className="progress-bar-container">
               <div className="progress-bar-fill" style={{ width: `${recordingProgress}%` }}></div>
@@ -233,7 +235,6 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
         )}
       </div>
 
-      {/* Barra de Ferramentas e Controles de Mídia */}
       <div className="player-toolbar">
         {media.type === 'video' && (
           <div className="video-controls">
@@ -254,14 +255,14 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({ media, config }) => 
             <Download size={15} /> FRAME (PNG)
           </button>
 
-          {media.type === 'video' && (
+          {isAnimatable && (
             isRecording ? (
               <button onClick={stopVideoRecording} className="btn-danger">
                 <Square size={15} /> PARAR GRAVAÇÃO
               </button>
             ) : (
               <button onClick={startVideoRecording} className="btn-accent">
-                <Video size={15} /> GRAVAR VÍDEO (.WEBM)
+                <Video size={15} /> GRAVAR ANIMAÇÃO (.WEBM)
               </button>
             )
           )}
