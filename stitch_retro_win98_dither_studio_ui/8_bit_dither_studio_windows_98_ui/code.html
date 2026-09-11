@@ -1,0 +1,452 @@
+<!DOCTYPE html><html lang="pt-BR"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8-Bit Dither Studio - Windows 98 Edition</title>
+  <link rel="stylesheet" href="https://unpkg.com/98.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Estilização retrô clássica Windows 98 */
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+      font-size: 11px;
+      user-select: none;
+      background-color: #008080; /* Teal clássico Win95/98 como fallback */
+      background-image: radial-gradient(circle at 50% 30%, #4a90e2 0%, #1c529e 60%, #0d306b 100%);
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Simulação visual do wallpaper Bliss clássico com gradiente e colinas estilizadas */
+    .bliss-bg {
+      background: linear-gradient(180deg, #3a88e9 0%, #7db9f7 45%, #9fd5ff 55%, #66ab29 56%, #4b8818 70%, #305b0e 100%);
+    }
+
+    /* Efeitos pontilhados e dithering no canvas de visualização */
+    .pixelated-canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      background: #000000;
+    }
+
+    /* Ícones na área de trabalho */
+    .desktop-icon {
+      width: 72px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      padding: 4px;
+      margin-bottom: 12px;
+      color: white;
+      text-shadow: 1px 1px 1px black;
+    }
+    .desktop-icon:focus, .desktop-icon.active {
+      background-color: rgba(0, 0, 128, 0.5);
+      outline: 1px dotted #ffffff;
+    }
+
+    /* Ajustes refinados de 98.css */
+    .window {
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .window-body {
+      margin: 6px;
+    }
+
+    /* Menu Bar */
+    .menu-bar {
+      display: flex;
+      background: #c0c0c0;
+      padding: 2px 4px;
+      border-bottom: 1px solid #808080;
+    }
+    .menu-item {
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+    .menu-item:hover {
+      background: #000080;
+      color: white;
+    }
+    .menu-item u {
+      text-decoration: underline;
+    }
+
+    /* Tool Palette styling */
+    .tool-btn {
+      min-width: 26px;
+      height: 24px;
+      padding: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tool-btn.active {
+      border: 1px solid #404040;
+      box-shadow: inset 1px 1px 0px #000, inset -1px -1px 0px #fff;
+      background: #dfdfdf;
+    }
+  </style>
+</head>
+<body class="bliss-bg relative flex flex-col h-screen w-screen overflow-hidden" style="background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuBdaeaoHo673usu_QgVb2PImeeFIRFdWR9r_GmltJyv216Gr1cDtJPTGO48tpgaw2x3iRH25BZL05b64V2AtEb-YhTmdAYM66mN3hhcLjloCLa-SZ18o102FB8YIGuvNlTYebUWM__9wVIURX-xijmCLagYraYdbZBWQ-nZ1vhzt2-N-qoRsEpBvWoFLZfL-SK1-cPptbu5oyIHKIdUrpJxVlmiMxgoNCT7RXRBWUR_1itXrxw9wYC5&quot;); background-size: cover; background-position: center center; background-repeat: no-repeat;">
+
+  <!-- Desktop Surface Icons -->
+  <div class="absolute top-4 left-4 z-0 flex flex-col gap-2 pointer-events-auto">
+    <div class="desktop-icon active" tabindex="0">
+      <svg class="w-8 h-8 mb-1 filter drop-shadow" viewBox="0 0 32 32" fill="none">
+        <rect x="3" y="5" width="26" height="20" rx="2" fill="#d4d0c8" stroke="#000" stroke-width="1.5"></rect>
+        <rect x="6" y="8" width="20" height="14" fill="#000080"></rect>
+        <rect x="8" y="10" width="16" height="10" fill="#008080"></rect>
+        <path d="M10 18 L14 13 L18 16 L22 11 L24 18 Z" fill="#00ffcc"></path>
+        <circle cx="12" cy="12" r="1.5" fill="#ffff00"></circle>
+      </svg>
+      <span class="text-[10px] leading-tight px-1 py-0.5 bg-[#000080]/70 text-white rounded-none">8-Bit Studio</span>
+    </div>
+
+    <div class="desktop-icon" tabindex="0">
+      <svg class="w-8 h-8 mb-1 filter drop-shadow" viewBox="0 0 32 32">
+        <path d="M4 6h24v20H4z" fill="#ffff80" stroke="#808000"></path>
+        <path d="M4 6l6-3h12l6 3" fill="#ffffc0" stroke="#808000"></path>
+        <path d="M6 10h20v14H6z" fill="#ffffff" stroke="#c0c0c0"></path>
+      </svg>
+      <span class="text-[10px] leading-tight">My Shaders</span>
+    </div>
+
+    <div class="desktop-icon" tabindex="0">
+      <svg class="w-8 h-8 mb-1 filter drop-shadow" viewBox="0 0 32 32">
+        <rect x="6" y="4" width="20" height="24" fill="#c0c0c0" stroke="#000"></rect>
+        <rect x="9" y="7" width="14" height="6" fill="#ffffff" stroke="#808080"></rect>
+        <circle cx="16" cy="20" r="4" fill="#808080"></circle>
+      </svg>
+      <span class="text-[10px] leading-tight">Presets CGA</span>
+    </div>
+  </div>
+
+  <!-- Main Application Workspace Area -->
+  <main class="relative z-10 flex-1 p-3 flex items-center justify-center">
+    
+    <!-- MASTER WINDOW: 8-Bit Dither Studio -->
+    <div class="window flex flex-col w-[980px] max-w-[98vw] max-h-[92vh] bg-[#c0c0c0] select-none" style="resize: both; overflow: hidden;">
+      
+      <!-- Title Bar -->
+      <div class="title-bar flex items-center justify-between py-1 px-1.5 cursor-move">
+        <div class="title-bar-text flex items-center gap-1 font-bold text-xs">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+            <rect x="1" y="2" width="14" height="11" rx="1" fill="#fff"></rect>
+            <rect x="3" y="4" width="10" height="7" fill="#000080"></rect>
+            <circle cx="6" cy="7" r="1.5" fill="#ff0"></circle>
+          </svg>
+          8-Bit Dither Studio - [untitled.bmp]
+        </div>
+        <div class="title-bar-controls flex gap-0.5">
+          <button aria-label="Minimize"></button>
+          <button aria-label="Maximize"></button>
+          <button aria-label="Close"></button>
+        </div>
+      </div>
+
+      <!-- Menu Bar (fictícia clássica) -->
+      <nav class="menu-bar text-[11px]">
+        <span class="menu-item"><u>F</u>ile</span>
+        <span class="menu-item"><u>E</u>dit</span>
+        <span class="menu-item"><u>V</u>iew</span>
+        <span class="menu-item"><u>I</u>mage</span>
+        <span class="menu-item"><u>O</u>ptions</span>
+        <span class="menu-item"><u>H</u>elp</span>
+      </nav>
+
+      <!-- Quick Action Toolbar -->
+      <div class="flex items-center gap-1 px-2 py-1 bg-[#c0c0c0] border-b border-[#808080] text-[11px]">
+        <button class="tool-btn" title="Open Video/Image">📂</button>
+        <button class="tool-btn" title="Save Frame">💾</button>
+        <span class="w-[1px] h-4 bg-[#808080] mx-0.5 border-r border-white"></span>
+        <button class="tool-btn active" title="Dither Mode">▦</button>
+        <button class="tool-btn" title="Invert Colors">◑</button>
+        <button class="tool-btn" title="CRT Scanlines">≡</button>
+        <span class="w-[1px] h-4 bg-[#808080] mx-0.5 border-r border-white"></span>
+        <span class="text-[#404040] ml-1">Input Source:</span>
+        <select class="text-[11px] py-0 px-1 h-5">
+          <option>Camera Stream (Webcam)</option>
+          <option selected="">Sample Video (Big Buck Bunny.mp4)</option>
+          <option>Static Image (Lena.bmp)</option>
+        </select>
+        <button class="ml-auto px-2 py-0.5 font-bold text-red-900 border border-t-white border-l-white border-r-black border-b-black bg-[#c0c0c0] active:translate-y-0.5">
+          ▶ Render Stream
+        </button>
+      </div>
+
+      <!-- Window Body: Two Column Layout (Controls Panel + Media Viewport) -->
+      <div class="window-body flex-1 flex gap-2 p-1.5 overflow-hidden min-h-[460px]">
+        
+        <!-- LEFT PANEL: Controls & Dithering Parameters (Fieldsets) -->
+        <aside class="w-[310px] flex flex-col gap-2 overflow-y-auto pr-1">
+          
+          <!-- Fieldset 1: Processing Resolution & Algorithm -->
+          <fieldset>
+            <legend class="font-bold">Algoritmo de Dithering</legend>
+            <div class="flex flex-col gap-1.5 text-[11px]">
+              <div class="field-row">
+                <label for="dither-algo" class="w-24">Algoritmo:</label>
+                <select id="dither-algo" class="flex-1">
+                  <option value="floyd">Floyd-Steinberg (Error Diff.)</option>
+                  <option value="bayer4">Bayer Ordered (4x4)</option>
+                  <option value="bayer8">Bayer Matrix (8x8)</option>
+                  <option value="atkinson">Atkinson (MacPaint)</option>
+                  <option value="threshold">Simple Threshold (1-Bit)</option>
+                </select>
+              </div>
+
+              <div class="field-row">
+                <label for="dither-palette" class="w-24">Paleta 8-Bit:</label>
+                <select id="dither-palette" class="flex-1">
+                  <option value="cga">IBM CGA (Mode 1 - High)</option>
+                  <option value="cga2">IBM CGA (Mode 2 - Cyan/Mag)</option>
+                  <option value="gameboy">Game Boy Classic (4 Greens)</option>
+                  <option value="c64">Commodore 64 (16 Colors)</option>
+                  <option value="apple2">Apple II (Hi-Res)</option>
+                  <option value="monochrome">Monochrome Green Phosphor</option>
+                </select>
+              </div>
+
+              <div class="field-row-stacked mt-1">
+                <div class="flex justify-between">
+                  <label for="downscale-res" class="">Resolução Interna (Pixel Grid):</label>
+                  <span id="res-val" class="font-mono text-gray-700">160 x 120 px</span>
+                </div>
+                <input id="downscale-res" type="range" min="32" max="320" value="160" class="w-full mt-1">
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Fieldset 2: Color Dynamics & Signal Adjustments -->
+          <fieldset>
+            <legend class="font-bold">Processamento de Sinal / Cores</legend>
+            <div class="flex flex-col gap-2 text-[11px]">
+              
+              <div class="field-row-stacked">
+                <div class="flex justify-between">
+                  <label for="slider-brightness" class="">Brilho (Bias):</label>
+                  <span class="font-mono text-gray-700">+12%</span>
+                </div>
+                <input id="slider-brightness" type="range" min="-100" max="100" value="12" class="w-full">
+              </div>
+
+              <div class="field-row-stacked">
+                <div class="flex justify-between">
+                  <label for="slider-contrast" class="">Contraste (Curva):</label>
+                  <span class="font-mono text-gray-700">1.35x</span>
+                </div>
+                <input id="slider-contrast" type="range" min="0" max="300" value="135" class="w-full">
+              </div>
+
+              <div class="field-row-stacked">
+                <div class="flex justify-between">
+                  <label for="slider-chroma" class="">Aberração Cromática (RGB Shift):</label>
+                  <span class="font-mono text-gray-700">2 px</span>
+                </div>
+                <input id="slider-chroma" type="range" min="0" max="10" value="2" class="w-full">
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Fieldset 3: Post-Processing & CRT FX -->
+          <fieldset>
+            <legend class="font-bold">Efeitos CRT &amp; Simulação</legend>
+            <div class="flex flex-col gap-1 text-[11px]">
+              <div class="field-row">
+                <input type="checkbox" id="scanlines" checked="">
+                <label for="scanlines" class="">Scanlines interlaçadas (CRT Line 50%)</label>
+              </div>
+              <div class="field-row">
+                <input type="checkbox" id="crt-curve">
+                <label for="crt-curve" class="">Curvatura de Tubo Catódico (Fish-eye)</label>
+              </div>
+              <div class="field-row">
+                <input type="checkbox" id="dither-noise" checked="">
+                <label for="dither-noise" class="">Adicionar jitter temporal (Ruído analógico)</label>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Actions box -->
+          <div class="flex gap-1.5 mt-auto pt-1">
+            <button class="flex-1 font-bold py-1">Resetar Padrões</button>
+            <button class="flex-1 font-bold py-1">Exportar .BMP</button>
+          </div>
+
+        </aside>
+
+        <!-- RIGHT PANEL: The Video / Canvas Display Port -->
+        <section class="flex-1 flex flex-col bg-[#c0c0c0] min-w-0">
+          
+          <!-- Sunken Viewport Bezel -->
+          <div class="flex-1 flex flex-col p-1 border border-t-[#808080] border-l-[#808080] border-r-white border-b-white bg-[#808080] overflow-hidden">
+            
+            <!-- Canvas Container with CRT Screen look -->
+            <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden border border-black shadow-inner">
+              
+              <!-- Simulated Canvas Rendering Target -->
+              <canvas id="dither-canvas" width="320" height="240" class="pixelated-canvas w-full h-full object-contain max-h-[440px]"></canvas>
+
+              <!-- CRT Vignette & Scanline Overlay -->
+              <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_transparent_60%,_rgba(0,0,0,0.6)_100%)]"></div>
+              <div class="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,_rgba(0,0,0,0.85)_50%)] bg-[length:100%_4px]"></div>
+
+              <!-- On-Screen Display (OSD) Vintage Tag -->
+              <div class="absolute top-2 left-2 text-[#00ff66] font-mono text-[10px] tracking-wider bg-black/80 px-1.5 py-0.5 border border-[#00aa44]">
+                ▶ PLAY • DITHER: BAYER 8x8 • IBM-CGA • 60.0 FPS
+              </div>
+            </div>
+
+            <!-- Playback Transport Controls (Windows Media Player 6.4 Style) -->
+            <div class="flex items-center gap-1.5 pt-1.5 px-1 bg-[#c0c0c0] border-t border-[#dfdfdf] text-[11px]">
+              <button class="tool-btn" title="Rewind">⏮</button>
+              <button class="tool-btn" title="Play">▶</button>
+              <button class="tool-btn" title="Pause">⏸</button>
+              <button class="tool-btn" title="Stop">⏹</button>
+              <button class="tool-btn" title="Fast Forward">⏭</button>
+
+              <span class="w-[1px] h-4 bg-[#808080] mx-1 border-r border-white"></span>
+              
+              <div class="flex-1 flex items-center gap-1">
+                <span class="text-[10px] font-mono text-gray-700">00:14</span>
+                <input type="range" min="0" max="100" value="28" class="flex-1">
+                <span class="text-[10px] font-mono text-gray-700">01:05</span>
+              </div>
+
+              <span class="w-[1px] h-4 bg-[#808080] mx-1 border-r border-white"></span>
+              
+              <span class="text-[10px]">Vol:</span>
+              <input type="range" min="0" max="100" value="80" class="w-16">
+            </div>
+
+          </div>
+
+        </section>
+
+      </div>
+
+      <!-- Bottom Status Bar (Sunken 3-Pane Status Bar) -->
+      <footer class="status-bar flex gap-1 p-0.5 border-t border-[#808080] bg-[#c0c0c0] text-[11px]">
+        <p class="status-bar-field flex-1 px-1.5 py-0.5 border border-t-[#808080] border-l-[#808080] border-r-white border-b-white text-gray-800">
+          Status: Engine Ready • Pipeline: WebGL/Canvas2D
+        </p>
+        <p class="status-bar-field w-32 px-1.5 py-0.5 border border-t-[#808080] border-l-[#808080] border-r-white border-b-white text-gray-800">
+          Rendering: 60 FPS
+        </p>
+        <p class="status-bar-field w-40 px-1.5 py-0.5 border border-t-[#808080] border-l-[#808080] border-r-white border-b-white text-gray-800">
+          Auth: Guest (Standalone)
+        </p>
+        <p class="status-bar-field w-24 px-1.5 py-0.5 border border-t-[#808080] border-l-[#808080] border-r-white border-b-white text-gray-800 font-mono text-center">
+          160x120 4bpp
+        </p>
+      </footer>
+
+    </div>
+
+  </main>
+
+  <!-- Windows 98 Taskbar at bottom -->
+  <footer class="h-7 bg-[#c0c0c0] border-t-2 border-white flex items-center px-1 justify-between z-20 select-none">
+    <div class="flex items-center gap-1 h-full py-0.5">
+      <!-- Start Button -->
+      <button class="flex items-center gap-1 font-bold text-xs h-full px-2 border border-t-white border-l-white border-r-black border-b-black shadow-sm active:translate-y-0.5">
+        <svg class="w-4 h-4" viewBox="0 0 16 16">
+          <path d="M1 2l6-1v6L1 7z" fill="#f35325"></path>
+          <path d="M8 0.8l7-1v7.2H8z" fill="#7fba00"></path>
+          <path d="M1 8h6v6l-6-1z" fill="#00a4ef"></path>
+          <path d="M8 8h7v7.2l-7-1z" fill="#ffb900"></path>
+        </svg>
+        <span class="font-extrabold text-[12px] tracking-tight">Start</span>
+      </button>
+
+      <!-- Taskbar Divider -->
+      <span class="w-[2px] h-5 bg-[#808080] border-r border-white mx-0.5"></span>
+
+      <!-- Active Taskbar App Tab -->
+      <div class="flex items-center gap-1 px-2 py-0.5 h-full bg-[#dfdfdf] border border-t-black border-l-black border-r-white border-b-white font-bold text-[11px] shadow-inner max-w-[200px] truncate">
+        <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="2" y="3" width="12" height="10" fill="#000080"></rect>
+        </svg>
+        <span class="">8-Bit Dither Studio</span>
+      </div>
+    </div>
+
+    <!-- System Tray Clock -->
+    <div class="flex items-center gap-1.5 px-2 py-0.5 border border-t-[#808080] border-l-[#808080] border-r-white border-b-white text-[11px]">
+      <span title="Audio Enabled" class="">🔊</span>
+      <span class="font-mono text-gray-800" id="live-clock">22:54</span>
+    </div>
+  </footer>
+
+  <!-- Script to draw preview dither art on canvas and update time -->
+  <script>
+    // Live Clock
+    const clock = document.getElementById('live-clock');
+    const updateTime = () => {
+      const d = new Date();
+      clock.textContent = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // Canvas procedural 8-bit dither preview illustration
+    const canvas = document.getElementById('dither-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    function drawRetroDitherDemo() {
+      const w = canvas.width;
+      const h = canvas.height;
+      
+      // Background gradient
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const bayer = [
+            [ 0,  8,  2, 10],
+            [12,  4, 14,  6],
+            [ 3, 11,  1,  9],
+            [15,  7, 13,  5]
+          ];
+          const threshold = (bayer[y % 4][x % 4] / 16) * 255;
+          
+          // Spherical gradient math
+          const dx = x - w/2;
+          const dy = y - h/2;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const intensity = Math.max(0, Math.min(255, 255 - dist * 2.8));
+          
+          if (dist < 46) {
+            // CGA Palette simulation (Cyan / Magenta / White)
+            if (intensity > threshold + 60) {
+              ctx.fillStyle = '#ffffff';
+            } else if (intensity > threshold) {
+              ctx.fillStyle = '#ff55ff'; // Magenta
+            } else {
+              ctx.fillStyle = '#55ffff'; // Cyan
+            }
+          } else {
+            // Background dither grid
+            const bgGrad = (y / h) * 255;
+            if (bgGrad > threshold) {
+              ctx.fillStyle = (x + y) % 2 === 0 ? '#0000aa' : '#000055';
+            } else {
+              ctx.fillStyle = '#000000';
+            }
+          }
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+    drawRetroDitherDemo();
+  </script>
+
+
+
+
+</body></html>
