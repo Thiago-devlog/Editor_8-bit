@@ -151,10 +151,158 @@ html, body {
   background: #c0c0c0;
 }
 
-@media (max-width: 840px) {
+@media (max-width: 768px) {
+  .retro-desktop {
+    padding-bottom: 34px;
+    align-items: flex-start;
+  }
+
+  .desktop-icons {
+    display: none;
+  }
+
+  .main-app-window {
+    width: 100vw;
+    max-width: 100vw;
+    height: calc(100vh - 34px);
+    max-height: calc(100vh - 34px);
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .title-bar-text {
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .menu-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .quick-toolbar {
+    padding: 3px 6px;
+    gap: 4px;
+  }
+
+  .quick-toolbar button {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .toolbar-info-badge {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .app-body {
-    flex-direction: column-reverse;
+    flex-direction: column;
+    padding: 4px;
+    gap: 8px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .viewport-section {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #c0c0c0;
+    padding-bottom: 2px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .sunken-bezel-container {
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .crt-screen-monitor {
+    min-height: 180px;
+    max-height: 38vh;
+  }
+
+  .controls-sidebar {
+    width: 100%;
+    padding-right: 0;
+    overflow-y: visible;
+  }
+
+  .controls-sidebar fieldset {
+    padding: 6px 8px;
+  }
+
+  .status-bar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .status-bar-field {
+    font-size: 10px;
+    padding: 2px 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .win98-taskbar {
+    height: 34px;
+    padding: 2px 4px;
+  }
+
+  .start-button {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .taskbar-item {
+    height: 28px;
+    max-width: 120px;
+    font-size: 10px;
+  }
+
+  .system-tray {
+    height: 28px;
+    padding: 0 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .crt-screen-monitor {
+    min-height: 160px;
+    max-height: 34vh;
+  }
+
+  .osd-tag {
+    font-size: 9px;
+    padding: 2px 4px;
+    max-width: 92%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .playback-transport-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: space-between;
+  }
+
+  .playback-transport-bar button {
+    height: 28px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  .taskbar-item {
+    display: none;
   }
 }
 

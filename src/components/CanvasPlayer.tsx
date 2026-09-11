@@ -307,9 +307,11 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
           )}
 
           <span className="timestamp-counter">{currentTimeStr}</span>
-          <span style={{ fontSize: '11px', fontWeight: 'bold', marginLeft: '6px' }}>{media ? media.name : 'Sem Mídia'}</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', marginLeft: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+            {media ? media.name : 'Sem Mídia'}
+          </span>
 
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
             <button onClick={exportSnapshot} title="Salvar Frame como PNG" disabled={!media || isRecording}>
                Frame (PNG)
             </button>

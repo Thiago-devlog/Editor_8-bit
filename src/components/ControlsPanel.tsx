@@ -62,12 +62,12 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange, 
         {config.dithering.enabled && (
           <>
             <div className="field-row" style={{ marginTop: '6px' }}>
-              <label htmlFor="algo-select" style={{ width: '85px' }}>Algoritmo:</label>
+              <label htmlFor="algo-select" style={{ minWidth: '75px' }}>Algoritmo:</label>
               <select
                 id="algo-select"
                 value={config.dithering.algorithm}
                 onChange={(e) => updateDithering({ algorithm: e.target.value as DitheringAlgorithm })}
-                style={{ flex: 1 }}
+                style={{ flex: 1, minWidth: '0' }}
               >
                 <option value="bayer4x4">Matriz Bayer 4x4 (Ordenado)</option>
                 <option value="bayer8x8">Matriz Bayer 8x8 (Ordenado Fino)</option>
@@ -78,12 +78,12 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange, 
             </div>
 
             <div className="field-row" style={{ marginTop: '6px' }}>
-              <label htmlFor="palette-select" style={{ width: '85px' }}>Paleta 8-Bit:</label>
+              <label htmlFor="palette-select" style={{ minWidth: '75px' }}>Paleta 8-Bit:</label>
               <select
                 id="palette-select"
                 value={config.dithering.preset}
                 onChange={(e) => updateDithering({ preset: e.target.value as PalettePreset })}
-                style={{ flex: 1 }}
+                style={{ flex: 1, minWidth: '0' }}
               >
                 <option value="fullColor">Cores Livres Quantizadas</option>
                 <option value="gameboy">Game Boy Classic (4 Verdes)</option>
