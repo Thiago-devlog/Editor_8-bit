@@ -13,6 +13,7 @@
   <img alt="Canvas API" src="https://img.shields.io/badge/Canvas-2D%20Pipeline-111827?style=for-the-badge&logo=html5" />
   <img alt="Windows 98 UI" src="https://img.shields.io/badge/UI-Windows%2098-8ecae6?style=for-the-badge" />
 </p>
+## https://editor-8-bit.vercel.app/
 
 Processador gráfico retrô que roda 100% no navegador. Carregue uma imagem, GIF ou vídeo curto e veja o pipeline de dithering, quantização de paleta e downscaling trabalhando em tempo real no HTML5 Canvas, tudo empacotado numa interface que imita o Windows Media Player 6.4 rodando num desktop Windows 98.
 
@@ -113,11 +114,6 @@ npm run build   # build de produção
 npm run preview # preview do build
 ```
 
----
-
-## Por que esse projeto está no portfólio
-
-Projetos de front-end que mexem com processamento de imagem em tempo real são raros porque exigem entender a fundo a Canvas 2D API — dados de pixel, `ImageData`, timing de frames, evitar re-renders desnecessários durante loops de animação. Aqui isso está combinado com uma identidade visual deliberada (o desktop Win98) e suporte a três tipos de mídia diferentes com pipelines distintos. Não é um filtro de Instagram. É um motor de processamento gráfico que roda no navegador.
 
 ---
 
