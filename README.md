@@ -1,130 +1,126 @@
 # 8-Bit Dither Studio
 
 <p align="center">
-  <img src="docs/retro-editor-hero.svg" alt="8-Bit Dither Studio hero artwork" width="1000" />
+  <img src="docs/hero.jpg" alt="8-Bit Dither Studio rodando no desktop" width="960" />
 </p>
 
 <p align="center">
   <a href="https://editor-8-bit.vercel.app/" target="_blank">
-    <img alt="Live demo" src="https://img.shields.io/badge/Live%20Demo-Open%20App-00d084?style=for-the-badge&logo=vercel" />
+    <img alt="Demo ao vivo" src="https://img.shields.io/badge/Demo-editor--8--bit.vercel.app-00d084?style=for-the-badge&logo=vercel" />
   </a>
-  <img alt="React" src="https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react" />
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react" />
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript" />
   <img alt="Canvas API" src="https://img.shields.io/badge/Canvas-2D%20Pipeline-111827?style=for-the-badge&logo=html5" />
   <img alt="Windows 98 UI" src="https://img.shields.io/badge/UI-Windows%2098-8ecae6?style=for-the-badge" />
 </p>
 
-A retro-styled front-end graphics processor that turns images, GIFs, and short videos into low-resolution, pixel-art compositions using real-time dithering, palette quantization, and CRT-inspired effects — all in the browser with the HTML5 Canvas API.
+Processador gráfico retrô que roda 100% no navegador. Carregue uma imagem, GIF ou vídeo curto e veja o pipeline de dithering, quantização de paleta e downscaling trabalhando em tempo real no HTML5 Canvas, tudo empacotado numa interface que imita o Windows Media Player 6.4 rodando num desktop Windows 98.
 
-## Overview
+---
 
-This project recreates the aesthetic of classic 8-bit and early-90s digital imaging tools while keeping the workflow practical: upload a source file, apply a pixelated pipeline, adjust the output, and export a frame as PNG or record a processed clip as WebM.
+## Como funciona
 
-The experience is intentionally designed as a Windows 98 desktop-inspired workstation, making the app feel like a nostalgic “retro media studio” rather than a generic image filter demo.
+O `VideoPipelineEngine` registra um loop de `requestAnimationFrame` que, a cada quadro:
 
-## Highlights
+1. Redimensiona a mídia de entrada para a resolução alvo (ex.: 240p) num canvas de processamento off-screen.
+2. Aplica ajustes de brilho e contraste diretamente nos dados de pixel via `ImageData`.
+3. Roda o algoritmo de dithering escolhido (Bayer, Floyd-Steinberg, Atkinson ou Threshold) com a paleta configurada.
+4. Aplica aberração cromática via múltiplos `drawImage` deslocados, se ativada.
+5. Sobe o resultado para o canvas principal com `image-rendering: pixelated`.
 
-- Real-time pixel-art downscaling with adjustable target resolution
-- Dithering modes:
-  - Bayer 4x4
-  - Bayer 8x8
-  - Floyd-Steinberg
-  - Atkinson
-- Palette presets inspired by retro hardware:
-  - Game Boy
-  - CGA
-  - Cyberpunk
-  - Vaporwave
-  - Full-color quantization
-- Brightness, contrast, saturation, and chromatic aberration adjustments
-- CRT scanline simulation and retro UI framing
-- Support for image, GIF, and video media
-- One-click PNG export and WebM capture from the processed canvas
+O React não toca no canvas — ele só repassa mudanças de configuração via uma ref mutável, sem provocar re-renders durante o loop de render.
 
-## Screenshots
+---
+
+## Paletas e algoritmos
 
 <p align="center">
-  <img src="docs/retro-editor-capture.svg" alt="Screenshot capture in retro desktop UI" width="900" />
+  <img src="docs/palettes.jpg" alt="Grid mostrando as diferentes combinações de paleta e algoritmo" width="900" />
 </p>
 
+Algoritmos disponíveis:
+
+- **Bayer 4x4** — dithering ordenado clássico, padrão xadrez visível
+- **Bayer 8x8** — mesmo princípio, máscara maior, resultado mais suave
+- **Floyd-Steinberg** — difusão de erro, mais fiel ao original
+- **Atkinson** — difusão mais suave, estética MacPaint/HyperCard
+- **Threshold** — sem dithering, apenas quantização direta
+
+Paletas disponíveis:
+
+- **Full Color** — quantização livre com N níveis por canal (configurável de 2 a 16)
+- **Game Boy** — 4 tons de verde
+- **IBM CGA** — ciano, magenta, branco e preto
+- **Cyberpunk** — roxo e ciano neon
+- **Vaporwave** — rosa e lilás pastel
+
+---
+
+## Mobile
+
 <p align="center">
-  <img src="docs/retro-editor-feature-grid.svg" alt="Feature grid" width="900" />
+  <img src="docs/mobile.jpg" alt="App rodando no celular" width="360" />
 </p>
+
+Em telas abaixo de 768px, a janela ocupa a tela inteira (sem bordas), o canvas fica fixo no topo com `position: sticky` enquanto os controles rolam embaixo. Assim dá para ajustar os sliders e ver a prévia sem subir a página.
+
+---
 
 ## Stack
 
-- React 19
-- TypeScript
-- Vite
-- HTML5 Canvas 2D API
-- CSS with a Windows 98-inspired design language
-- `gifuct-js` for animated GIF decoding
+| Camada | Tecnologia |
+|---|---|
+| UI | React 19 + TypeScript |
+| Build | Vite 6 |
+| Renderização | HTML5 Canvas 2D API |
+| Decodificação GIF | `gifuct-js` |
+| Estilo | `98.css` + overrides CSS personalizados |
+| Deploy | Vercel |
 
-## Project structure
+---
+
+## Estrutura do projeto
 
 ```text
-.
-├── src/
-│   ├── App.tsx
-│   ├── components/
-│   ├── engine/
-│   ├── index.css
-│   ├── main.tsx
-│   └── types/
-├── docs/
-│   ├── retro-editor-hero.svg
-│   ├── retro-editor-capture.svg
-│   └── retro-editor-feature-grid.svg
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-├── index.html
-└── README.md
+src/
+├── App.tsx                        # Shell do desktop Win98, upload e estado global
+├── components/
+│   ├── CanvasPlayer.tsx           # Loop de playback, drag-and-drop, exportação
+│   ├── ControlsPanel.tsx          # Painel de controles (algoritmo, paleta, sliders)
+│   └── Taskbar.tsx                # Taskbar Win98 com relógio isolado
+├── engine/
+│   ├── videoPipelineEngine.ts     # Orquestrador do loop de render
+│   ├── ditheringAlgorithms.ts     # Bayer, Floyd-Steinberg, Atkinson, Threshold
+│   ├── ditheringMatrices.ts       # Matrizes Bayer 4x4 e 8x8
+│   └── gifDecoder.ts              # Wrapper para gifuct-js
+└── types/
+    └── pipeline.ts                # Tipos da configuração do pipeline
 ```
 
-## Architecture
+---
 
-The processing pipeline is intentionally modular:
-
-- `src/App.tsx` hosts the desktop-shell experience and the media upload flow.
-- `src/components/CanvasPlayer.tsx` handles playback, drag-and-drop media loading, exports, and capture.
-- `src/components/ControlsPanel.tsx` exposes the digital signal controls for the user.
-- `src/engine/videoPipelineEngine.ts` orchestrates the render loop and applies the processing pipeline to each frame.
-- `src/engine/ditheringAlgorithms.ts` contains the image-processing algorithms and palette mapping logic.
-- `src/types/pipeline.ts` defines the configuration model used by the app.
-
-## Local development
+## Rodando localmente
 
 ```bash
 npm install
 npm run dev
 ```
 
-Then open the local Vite URL printed in the terminal, usually:
-
-```text
-http://localhost:5173
-```
-
-## Production build
+Abra `http://localhost:5173` no navegador.
 
 ```bash
-npm run build
+npm run build   # build de produção
+npm run preview # preview do build
 ```
 
-## Live demo
+---
 
-- Production app: https://editor-8-bit.vercel.app/
+## Por que esse projeto está no portfólio
 
-## Why this project matters
+Projetos de front-end que mexem com processamento de imagem em tempo real são raros porque exigem entender a fundo a Canvas 2D API — dados de pixel, `ImageData`, timing de frames, evitar re-renders desnecessários durante loops de animação. Aqui isso está combinado com uma identidade visual deliberada (o desktop Win98) e suporte a três tipos de mídia diferentes com pipelines distintos. Não é um filtro de Instagram. É um motor de processamento gráfico que roda no navegador.
 
-This project blends UI, visual design, and graphics engineering into a single front-end experience. It is a strong portfolio artifact because it demonstrates:
+---
 
-- real browser-side image processing without a backend
-- creative interaction design tied to technical constraints
-- control over rendering performance and visual output
-- a polished product identity that feels like a complete software experience, not a toy demo
-
-## License
+## Licença
 
 MIT

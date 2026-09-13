@@ -180,13 +180,13 @@ export function App() {
           <p className="status-bar-field status-expand">
             Status: Engine Ready • Pipeline: HTML5 Canvas2D 60FPS
           </p>
-          <p className="status-bar-field" style={{ width: '120px' }}>
+          <p className="status-bar-field">
             FPS: 60.0
           </p>
-          <p className="status-bar-field" style={{ width: '130px' }}>
+          <p className="status-bar-field">
             Guest (No Login)
           </p>
-          <p className="status-bar-field" style={{ width: '110px', textAlign: 'center' }}>
+          <p className="status-bar-field" style={{ textAlign: 'center' }}>
             {config.resolution.enabled ? `${config.resolution.targetHeight}p Pixelated` : 'Native Res'}
           </p>
         </footer>
