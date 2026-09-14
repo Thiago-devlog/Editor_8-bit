@@ -15,7 +15,7 @@
 </p>
 
 
-Processador gráfico retrô que roda 100% no navegador. Carregue uma imagem, GIF ou vídeo curto e veja o pipeline de dithering, quantização de paleta e downscaling trabalhando em tempo real no HTML5 Canvas, tudo empacotado numa interface que imita o Windows Media Player 6.4 rodando num desktop Windows 98.
+Processador gráfico retrô que roda 100% no navegador. Carregue uma imagem, GIF ou vídeo curto e veja o pipeline de dithering, quantização de paleta e downscaling trabalhando em tempo real no HTML5 Canvas, tudo empacotado numa interface que imita o Windows Media Player rodando num desktop Windows 98.
 
 ---
 
