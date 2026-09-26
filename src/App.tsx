@@ -27,7 +27,23 @@ const DEFAULT_CONFIG: PipelineConfig = {
     contrast: 15,
     saturation: 0
   },
-  crtEffect: false
+  crtEffect: false,
+  ascii: {
+    enabled: false,
+    fontSize: 12,
+    ramp: 'standard',
+    color: 'source',
+    customRamp: ' .:-=+*#%@',
+    cols: 120,
+    rows: 90
+  },
+  shader: {
+    enabled: false,
+    curvature: 0.35,
+    chromaticAberration: 0.12,
+    scanlines: 0.5,
+    sweep: 0.22
+  }
 };
 
 export function App() {
@@ -180,13 +196,13 @@ export function App() {
           <p className="status-bar-field status-expand">
             Status: Engine Ready • Pipeline: HTML5 Canvas2D 60FPS
           </p>
-          <p className="status-bar-field">
+          <p className="status-bar-field" style={{ width: '120px' }}>
             FPS: 60.0
           </p>
-          <p className="status-bar-field">
+          <p className="status-bar-field" style={{ width: '130px' }}>
             Guest (No Login)
           </p>
-          <p className="status-bar-field" style={{ textAlign: 'center' }}>
+          <p className="status-bar-field" style={{ width: '110px', textAlign: 'center' }}>
             {config.resolution.enabled ? `${config.resolution.targetHeight}p Pixelated` : 'Native Res'}
           </p>
         </footer>

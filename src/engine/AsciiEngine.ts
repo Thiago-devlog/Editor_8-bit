@@ -1,4 +1,4 @@
-import { AsciiConfig, AsciiRamp } from '../types/pipeline';
+﻿import { AsciiConfig, AsciiRamp } from '../types/pipeline';
 
 export const ASCII_RAMPS: Record<AsciiRamp, string> = {
   standard: ' .:-=+*#%@',
@@ -62,7 +62,6 @@ export class AsciiEngine {
         const g = data[idx + 1];
         const b = data[idx + 2];
 
-        // Luminância Rec. 601: L = 0.299R + 0.587G + 0.114B
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
         const charIdx = Math.min(rampLen - 1, Math.floor((lum / 255) * rampLen));
 
@@ -79,3 +78,5 @@ export class AsciiEngine {
     // Sem recursos adicionais a serem liberados
   }
 }
+
+export default AsciiEngine;

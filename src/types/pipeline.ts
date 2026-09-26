@@ -29,12 +29,34 @@ export interface AdjustmentsConfig {
   saturation: number; // -100 a 100
 }
 
+export type AsciiRamp = 'standard' | 'matrix' | 'binary' | 'katakana' | 'custom';
+
+export interface AsciiConfig {
+  enabled: boolean;
+  fontSize: number;
+  ramp: AsciiRamp;
+  color: 'source' | string;
+  customRamp: string;
+  cols: number;
+  rows: number;
+}
+
+export interface ShaderConfig {
+  enabled: boolean;
+  curvature: number;
+  chromaticAberration: number;
+  scanlines: number;
+  sweep: number;
+}
+
 export interface PipelineConfig {
   resolution: ResolutionConfig;
   adjustments: AdjustmentsConfig;
   dithering: DitheringConfig;
   chromaticAberration: ChromaticAberrationConfig;
   crtEffect: boolean;
+  ascii: AsciiConfig;
+  shader: ShaderConfig;
 }
 
 export interface MediaSource {

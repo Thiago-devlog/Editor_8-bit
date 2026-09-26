@@ -1,5 +1,5 @@
 import React from 'react';
-import { PipelineConfig, DitheringAlgorithm, PalettePreset } from '../types/pipeline';
+import { PipelineConfig, DitheringAlgorithm, PalettePreset, AsciiRamp } from '../types/pipeline';
 
 interface ControlsPanelProps {
   config: PipelineConfig;
@@ -34,6 +34,20 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange, 
     onChange({
       ...config,
       adjustments: { ...config.adjustments, ...fields }
+    });
+  };
+
+  const updateAscii = (fields: Partial<PipelineConfig['ascii']>) => {
+    onChange({
+      ...config,
+      ascii: { ...config.ascii, ...fields }
+    });
+  };
+
+  const updateShader = (fields: Partial<PipelineConfig['shader']>) => {
+    onChange({
+      ...config,
+      shader: { ...config.shader, ...fields }
     });
   };
 
@@ -219,7 +233,133 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({ config, onChange, 
         )}
       </fieldset>
 
-      {/* Fieldset 3: Efeitos Analógicos / CRT */}
+      {/* Fieldset 3: ASCII / Matrix & WebGL */}
+      <fieldset>
+        <legend>ASCII / Matrix & WebGL</legend>
+
+        <div className="field-row">
+          <input
+            type="checkbox"
+            id="check-ascii-enable"
+            checked={config.ascii.enabled}
+            onChange={(e) => updateAscii({ enabled: e.target.checked })}
+          />
+          <label htmlFor="check-ascii-enable">Render em ASCII / Matrix</label>
+        </div>
+
+        {config.ascii.enabled && (
+          <>
+            <div className="field-row" style={{ marginTop: '6px' }}>
+              <label htmlFor="ascii-ramp" style={{ minWidth: '75px' }}>Ramp:</label>
+              <select
+                id="ascii-ramp"
+                value={config.ascii.ramp}
+                onChange={(e) => updateAscii({ ramp: e.target.value as AsciiRamp })}
+                style={{ flex: 1, minWidth: '0' }}
+              >
+                <option value="standard">ASCII Clássico</option>
+                <option value="matrix">Matrix / 01</option>
+                <option value="binary">Binário</option>
+                <option value="katakana">Katakana</option>
+                <option value="custom">Customizado</option>
+              </select>
+            </div>
+
+            {config.ascii.ramp === 'custom' && (
+              <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+                <label htmlFor="ascii-custom">Ramp customizada:</label>
+                <input
+                  id="ascii-custom"
+                  type="text"
+                  value={config.ascii.customRamp}
+                  onChange={(e) => updateAscii({ customRamp: e.target.value })}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            )}
+
+            <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+              <div className="slider-header">
+                <label htmlFor="ascii-font-size">Tamanho da fonte:</label>
+                <span className="value-tag">{config.ascii.fontSize}px</span>
+              </div>
+              <input
+                id="ascii-font-size"
+                type="range"
+                min="6"
+                max="24"
+                step="1"
+                value={config.ascii.fontSize}
+                onChange={(e) => updateAscii({ fontSize: Number(e.target.value) })}
+              />
+            </div>
+          </>
+        )}
+
+        <div className="field-row" style={{ marginTop: '8px' }}>
+          <input
+            type="checkbox"
+            id="check-shader-enable"
+            checked={config.shader.enabled}
+            onChange={(e) => updateShader({ enabled: e.target.checked })}
+          />
+          <label htmlFor="check-shader-enable">Ativar pós-processamento WebGL</label>
+        </div>
+
+        {config.shader.enabled && (
+          <>
+            <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+              <div className="slider-header">
+                <label htmlFor="shader-curvature">Curvatura CRT:</label>
+                <span className="value-tag">{config.shader.curvature.toFixed(2)}</span>
+              </div>
+              <input
+                id="shader-curvature"
+                type="range"
+                min="0"
+                max="1.5"
+                step="0.05"
+                value={config.shader.curvature}
+                onChange={(e) => updateShader({ curvature: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+              <div className="slider-header">
+                <label htmlFor="shader-chroma">Aberração cromática:</label>
+                <span className="value-tag">{config.shader.chromaticAberration.toFixed(2)}</span>
+              </div>
+              <input
+                id="shader-chroma"
+                type="range"
+                min="0"
+                max="0.8"
+                step="0.02"
+                value={config.shader.chromaticAberration}
+                onChange={(e) => updateShader({ chromaticAberration: Number(e.target.value) })}
+              />
+            </div>
+
+            <div className="field-row-stacked" style={{ marginTop: '6px' }}>
+              <div className="slider-header">
+                <label htmlFor="shader-scanlines">Scanlines:</label>
+                <span className="value-tag">{config.shader.scanlines.toFixed(2)}</span>
+              </div>
+              <input
+                id="shader-scanlines"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={config.shader.scanlines}
+                onChange={(e) => updateShader({ scanlines: Number(e.target.value) })}
+              />
+            </div>
+          </>
+        )}
+      </fieldset>
+
+      {/* Fieldset 4: Efeitos Analógicos / CRT */}
       <fieldset>
         <legend>Efeitos CRT & Simulação</legend>
         <div className="field-row">

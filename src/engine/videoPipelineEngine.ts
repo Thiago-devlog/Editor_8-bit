@@ -1,5 +1,7 @@
 import { PipelineConfig } from '../types/pipeline';
 import { DecodedGif } from './gifDecoder';
+import AsciiEngine from './AsciiEngine';
+import { ShaderPipeline } from './ShaderPipeline';
 import {
   applyAdjustments,
   applyChromaticAberration,
@@ -25,6 +27,8 @@ export class VideoPipelineEngine {
 
   private currentGifFrameIndex: number = 0;
   private lastGifFrameTime: number = 0;
+  private asciiEngine: AsciiEngine;
+  private shaderPipeline: ShaderPipeline;
 
   constructor(
     mediaElement: HTMLVideoElement | HTMLImageElement,
@@ -46,6 +50,9 @@ export class VideoPipelineEngine {
     const pCtx = this.processCanvas.getContext('2d', { willReadFrequently: true });
     if (!pCtx) throw new Error('Não foi possível inicializar o contexto do Canvas de Processamento.');
     this.processCtx = pCtx;
+
+    this.asciiEngine = new AsciiEngine();
+    this.shaderPipeline = new ShaderPipeline(this.displayCanvas);
   }
 
   public start(): void {
@@ -65,6 +72,8 @@ export class VideoPipelineEngine {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
+    this.asciiEngine.dispose();
+    this.shaderPipeline.dispose();
   }
 
   public forceRender(): void {
@@ -171,7 +180,24 @@ export class VideoPipelineEngine {
     // 5. Atualiza os pixels do Canvas Interno
     this.processCtx.putImageData(imageData, 0, 0);
 
-    // 6. Redesenha no Canvas Principal com Pixelate (Sem interpolação bilinear)
+    // 6. Render final por modo ativo: ASCII / Matrix, WebGL ou pipeline tradicional
+    if (config.ascii.enabled) {
+      this.displayCtx.clearRect(0, 0, this.displayCanvas.width, this.displayCanvas.height);
+      this.asciiEngine.render(
+        this.processCanvas,
+        this.displayCtx,
+        this.displayCanvas.width,
+        this.displayCanvas.height,
+        config.ascii
+      );
+      return;
+    }
+
+    if (config.shader.enabled) {
+      this.shaderPipeline.render(this.processCanvas, config.shader);
+      return;
+    }
+
     this.displayCtx.imageSmoothingEnabled = false;
     this.displayCtx.drawImage(
       this.processCanvas,
@@ -179,7 +205,6 @@ export class VideoPipelineEngine {
       0, 0, this.displayCanvas.width, this.displayCanvas.height
     );
 
-    // 7. Efeito de Linhas de Varredura (CRT Scanlines)
     if (config.crtEffect) {
       this.drawScanlines(targetWidth, targetHeight);
     }
