@@ -1,121 +1,115 @@
-# 8-Bit Dither Studio
+# editor-8-bit
 
-<p align="center">
-  <img src="docs/hero.jpg" alt="8-Bit Dither Studio rodando no desktop" width="960" />
-</p>
+Editor de retro-graphics e efeitos 8-bit em tempo real no navegador, com pipeline de processamento de imagem e vídeo, quantização de cores, dithering, ASCII/matrix e pós-processamento em WebGL.
 
-<p align="center">
-  <a href="https://editor-8-bit.vercel.app/" target="_blank">
-    <img alt="Demo ao vivo" src="https://img.shields.io/badge/Demo-editor--8--bit.vercel.app-00d084?style=for-the-badge&logo=vercel" />
-  </a>
-  <img alt="React 19" src="https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript" />
-  <img alt="Canvas API" src="https://img.shields.io/badge/Canvas-2D%20Pipeline-111827?style=for-the-badge&logo=html5" />
-  <img alt="Windows 98 UI" src="https://img.shields.io/badge/UI-Windows%2098-8ecae6?style=for-the-badge" />
-</p>
+## Visão geral
 
+O projeto foi pensado como um ambiente de experimentação visual para renderização retrô em tempo real. Ele aceita imagens, GIFs e vídeos curtos, aplica downscaling e filtros em um canvas offscreen, e então escolhe um modo final de exibição: processamento direto em Canvas 2D, mapping para ASCII/matrix ou pós-processamento com shader WebGL.
 
-Processador gráfico retrô que roda 100% no navegador. Carregue uma imagem, GIF ou vídeo curto e veja o pipeline de dithering, quantização de paleta e downscaling trabalhando em tempo real no HTML5 Canvas, tudo empacotado numa interface que imita o Windows Media Player rodando num desktop Windows 98.
+A arquitetura prioriza três objetivos principais:
 
----
+- controle preciso do pipeline de pixels em JavaScript;
+- estética retro funcional e com baixo custo computacional;
+- uma interface inspirada em software clássico, mantendo o código limpo e modular.
 
-## Como funciona
+## Principais funcionalidades
 
-O `VideoPipelineEngine` registra um loop de `requestAnimationFrame` que, a cada quadro:
+- Upload de imagens, GIFs e vídeos curtos
+- Redimensionamento de mídia para resolução alvo controlada
+- Ajustes de brilho, contraste e saturação em tempo real
+- Quantização de cores em paletas 8-bit e presets retrô
+- Algoritmos de dithering: Bayer 4x4, Bayer 8x8, Floyd-Steinberg e Atkinson
+- Renderização em ASCII / matrix com mapas de luminância
+- Pós-processamento visual com WebGL: curvatura, scanlines, sweep e aberrração cromática
+- Interface desktop inspirada em Windows 98 com painel de controles interativos
+- Exportação da visualização final em imagem
 
-1. Redimensiona a mídia de entrada para a resolução alvo (ex.: 240p) num canvas de processamento off-screen.
-2. Aplica ajustes de brilho e contraste diretamente nos dados de pixel via `ImageData`.
-3. Roda o algoritmo de dithering escolhido (Bayer, Floyd-Steinberg, Atkinson ou Threshold) com a paleta configurada.
-4. Aplica aberração cromática via múltiplos `drawImage` deslocados, se ativada.
-5. Sobe o resultado para o canvas principal com `image-rendering: pixelated`.
+## Diagrama do pipeline de processamento de mídia
 
-O React não toca no canvas — ele só repassa mudanças de configuração via uma ref mutável, sem provocar re-renders durante o loop de render.
+```mermaid
+flowchart LR
+    A[Media Source<br/>Imagem / GIF / Vídeo] --> B[Canvas de processamento offscreen]
+    B --> C[Redimensionamento e amostragem]
+    C --> D[Ajustes de imagem<br/>brilho, contraste, saturação]
+    D --> E[Quantização e dithering]
+    E --> F{Modo de render final}
+    F --> G[Canvas 2D<br/>visualização direta]
+    F --> H[ASCII / Matrix<br/>luminância para caracteres]
+    F --> I[WebGL Shader<br/>CRT, chroma, scanlines]
+    G --> J[Canvas final do usuário]
+    H --> J
+    I --> J
+```
 
----
+## Arquitetura em alto nível
 
-## Paletas e algoritmos
+A lógica principal está concentrada em um pipeline de processamento em Canvas 2D. O fluxo geral funciona assim:
 
-<p align="center">
-  <img src="docs/palettes.jpg" alt="Grid mostrando as diferentes combinações de paleta e algoritmo" width="900" />
-</p>
+1. A mídia é carregada como elemento de imagem, vídeo ou frame de GIF.
+2. Uma cópia offscreen do canvas recebe o conteúdo em uma resolução alvo menor, reduzindo custo de processamento e melhorando a performance.
+3. Os pixels são lidos com `getImageData`, permitindo filtros por canal e quantização por nível.
+4. A etapa de dithering e de paleta aplica aproximações visuais para reproduzir o aspecto de sistemas limitados em bits.
+5. O resultado pode seguir para renderização direta no canvas, para mapeamento de luminância em ASCII ou para efeito de pós-processamento em WebGL.
+6. A UI em React apenas dispara configurações e não participa do loop de animação, evitando re-renders caros a cada frame.
 
-Algoritmos disponíveis:
+Essa separação é importante: o processamento gráfico intenso fica no código de render em JavaScript/Canvas, enquanto a interface permanece reativa e enxuta.
 
-- **Bayer 4x4** — dithering ordenado clássico, padrão xadrez visível
-- **Bayer 8x8** — mesmo princípio, máscara maior, resultado mais suave
-- **Floyd-Steinberg** — difusão de erro, mais fiel ao original
-- **Atkinson** — difusão mais suave, estética MacPaint/HyperCard
-- **Threshold** — sem dithering, apenas quantização direta
+## Tecnologias utilizadas
 
-Paletas disponíveis:
-
-- **Full Color** — quantização livre com N níveis por canal (configurável de 2 a 16)
-- **Game Boy** — 4 tons de verde
-- **IBM CGA** — ciano, magenta, branco e preto
-- **Cyberpunk** — roxo e ciano neon
-- **Vaporwave** — rosa e lilás pastel
-
----
-
-## Mobile
-
-<p align="center">
-  <img src="docs/mobile.jpg" alt="App rodando no celular" width="360" />
-</p>
-
-Em telas abaixo de 768px, a janela ocupa a tela inteira (sem bordas), o canvas fica fixo no topo com `position: sticky` enquanto os controles rolam embaixo. Assim dá para ajustar os sliders e ver a prévia sem subir a página.
-
----
-
-## Stack
-
-| Camada | Tecnologia |
-|---|---|
-| UI | React 19 + TypeScript |
-| Build | Vite 6 |
-| Renderização | HTML5 Canvas 2D API |
-| Decodificação GIF | `gifuct-js` |
-| Estilo | `98.css` + overrides CSS personalizados |
-| Deploy | Vercel |
-
----
+- React 19
+- TypeScript
+- Vite
+- HTML5 Canvas 2D API
+- WebGL
+- gifuct-js para decodificação de GIFs
+- CSS e 98.css para a estética desktop retrô
+- Vercel para deploy
 
 ## Estrutura do projeto
 
 ```text
 src/
-├── App.tsx                        # Shell do desktop Win98, upload e estado global
+├── App.tsx
 ├── components/
-│   ├── CanvasPlayer.tsx           # Loop de playback, drag-and-drop, exportação
-│   ├── ControlsPanel.tsx          # Painel de controles (algoritmo, paleta, sliders)
-│   └── Taskbar.tsx                # Taskbar Win98 com relógio isolado
+│   ├── CanvasPlayer.tsx
+│   ├── ControlsPanel.tsx
+│   ├── FileUpload.tsx
+│   ├── Header.tsx
+│   └── Taskbar.tsx
 ├── engine/
-│   ├── videoPipelineEngine.ts     # Orquestrador do loop de render
-│   ├── ditheringAlgorithms.ts     # Bayer, Floyd-Steinberg, Atkinson, Threshold
-│   ├── ditheringMatrices.ts       # Matrizes Bayer 4x4 e 8x8
-│   └── gifDecoder.ts              # Wrapper para gifuct-js
-└── types/
-    └── pipeline.ts                # Tipos da configuração do pipeline
+│   ├── AsciiEngine.ts
+│   ├── ShaderPipeline.ts
+│   ├── ditheringAlgorithms.ts
+│   ├── ditheringMatrices.ts
+│   ├── gifDecoder.ts
+│   └── videoPipelineEngine.ts
+├── types/
+│   └── pipeline.ts
+├── index.css
+├── main.tsx
+├── retro-overrides.css
+└── App.tsx
 ```
 
----
-
-## Rodando localmente
+## Como executar localmente
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173` no navegador.
+A aplicação fica disponível em:
 
-```bash
-npm run build   # build de produção
-npm run preview # preview do build
+```text
+http://localhost:5173
 ```
 
+Para build de produção:
 
----
+```bash
+npm run build
+npm run preview
+```
 
 ## Licença
 
