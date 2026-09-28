@@ -18,6 +18,7 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const monitorRef = useRef<HTMLDivElement>(null);
 
   const engineRef = useRef<VideoPipelineEngine | null>(null);
   const configRef = useRef<PipelineConfig>(config);
@@ -28,6 +29,11 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
   const [recordingProgress, setRecordingProgress] = useState<number>(0);
   const [currentTimeStr, setCurrentTimeStr] = useState<string>('00:00');
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+
+  // Estados do Modo Comparar (Before / After Split Screen)
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
+  const [sliderPosition, setSliderPosition] = useState<number>(50);
+  const isDraggingSlider = useRef<boolean>(false);
 
   // Sincroniza a configuração com a Ref mutável
   useEffect(() => {
@@ -71,6 +77,60 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
       engineRef.current = null;
     };
   }, [media]);
+
+  // Lógica de manipulação do Slider Before/After (Mouse & Touch)
+  const updateSliderPos = (clientX: number) => {
+    if (!monitorRef.current) return;
+    const rect = monitorRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPosition(percentage);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isCompareMode || !media) return;
+    isDraggingSlider.current = true;
+    updateSliderPos(e.clientX);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isCompareMode || !media) return;
+    isDraggingSlider.current = true;
+    if (e.touches[0]) {
+      updateSliderPos(e.touches[0].clientX);
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingSlider.current) {
+        updateSliderPos(e.clientX);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDraggingSlider.current && e.touches[0]) {
+        updateSliderPos(e.touches[0].clientX);
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDraggingSlider.current = false;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, []);
 
   const togglePlay = () => {
     if (!videoRef.current || media?.type !== 'video') return;
@@ -190,7 +250,6 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
     setCurrentTimeStr(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
   };
 
-  // Handlers para Drag & Drop na Tela Preta
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -219,14 +278,18 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
   return (
     <section className="viewport-section">
       <div className="sunken-bezel-container">
-        {/* Moldura CRT Preta com Drag & Drop */}
+        {/* Moldura CRT Preta com Drag & Drop e Split-Screen Compare */}
         <div
-          className={`crt-screen-monitor ${isDragOver ? 'drag-active' : ''}`}
+          ref={monitorRef}
+          className={`crt-screen-monitor ${isDragOver ? 'drag-active' : ''} ${isCompareMode ? 'compare-active' : ''}`}
           style={{ minHeight: media ? 'auto' : '320px' }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
+          {/* Mídia Original (Camada de Fundo no modo Comparar) */}
           {media?.type === 'video' ? (
             <video
               ref={videoRef}
@@ -236,24 +299,27 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
               playsInline
               autoPlay
               onTimeUpdate={handleTimeUpdate}
-              style={{ display: 'none' }}
+              className={`original-media-element ${isCompareMode ? 'visible-compare' : 'hidden-engine'}`}
             />
           ) : media ? (
             <img
               ref={imageRef}
               src={media.url}
               alt="Original Source"
-              style={{ display: 'none' }}
+              className={`original-media-element ${isCompareMode ? 'visible-compare' : 'hidden-engine'}`}
             />
           ) : null}
 
-          {/* Canvas Nativo 8-Bit */}
+          {/* Canvas Processado Nativo 8-Bit (Camada Superior Recortada por clip-path) */}
           <canvas
             ref={canvasRef}
             width={320}
             height={240}
-            className="pixel-canvas"
-            style={{ display: media ? 'block' : 'none' }}
+            className={`pixel-canvas ${isCompareMode ? 'compare-mode-canvas' : ''}`}
+            style={{
+              display: media ? 'block' : 'none',
+              clipPath: isCompareMode ? `inset(0 ${100 - sliderPosition}% 0 0)` : 'none'
+            }}
           />
 
           {!media && !isDragOver && (
@@ -266,12 +332,36 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
             </div>
           )}
 
-          {/* OSD Verde Retrô */}
-          {media && (
+          {/* OSD Verde Retrô (Modo Padrão) */}
+          {media && !isCompareMode && (
             <div className="osd-tag">
               {media.type === 'video' ? (isPlaying ? '▶ PLAY' : '❚❚ PAUSE') : media.type === 'gif' ? ' GIF ANIMATED' : ' IMAGE'}
               {' • '}DITHER: {config.dithering.enabled ? config.dithering.algorithm.toUpperCase() : 'OFF'}
               {' • '}PALETTE: {config.dithering.preset.toUpperCase()}
+            </div>
+          )}
+
+          {/* Badges do Modo Comparação (Antes / Depois) */}
+          {media && isCompareMode && (
+            <>
+              <div className="compare-badge compare-badge-left">
+                ◀ PROCESSADO ({Math.round(sliderPosition)}%)
+              </div>
+              <div className="compare-badge compare-badge-right">
+                ORIGINAL ▶
+              </div>
+            </>
+          )}
+
+          {/* Divisor Vertical e Handle Arrastável do Slider */}
+          {media && isCompareMode && (
+            <div
+              className="before-after-divider"
+              style={{ left: `${sliderPosition}%` }}
+            >
+              <div className="before-after-handle" title="Arraste para comparar Antes / Depois">
+                ◄►
+              </div>
             </div>
           )}
 
@@ -312,6 +402,20 @@ export const CanvasPlayer: React.FC<CanvasPlayerProps> = ({
           </span>
 
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {/* Botão de Alternância do Modo Comparar Antes / Depois */}
+            <button
+              onClick={() => setIsCompareMode(!isCompareMode)}
+              title={isCompareMode ? 'Exibir apenas frame processado' : 'Comparar frame original e processado lado a lado'}
+              disabled={!media}
+              style={{
+                fontWeight: 'bold',
+                background: isCompareMode ? '#000080' : undefined,
+                color: isCompareMode ? '#ffffff' : undefined
+              }}
+            >
+              {isCompareMode ? '👁️ Processado' : '🌗 Comparar (Antes/Depois)'}
+            </button>
+
             <button onClick={exportSnapshot} title="Salvar Frame como PNG" disabled={!media || isRecording}>
                Frame (PNG)
             </button>
