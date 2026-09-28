@@ -1,4 +1,16 @@
-# editor-8-bit
+<p align="center">
+  <img src="docs/hero.jpg" alt="8-Bit Dither Studio rodando no desktop" width="960" />
+</p>
+
+<p align="center">
+  <a href="https://editor-8-bit.vercel.app/" target="_blank">
+    <img alt="Demo ao vivo" src="https://img.shields.io/badge/Demo-editor--8--bit.vercel.app-00d084?style=for-the-badge&logo=vercel" />
+  </a>
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?style=for-the-badge&logo=typescript" />
+  <img alt="Canvas API" src="https://img.shields.io/badge/Canvas-2D%20Pipeline-111827?style=for-the-badge&logo=html5" />
+  <img alt="Windows 98 UI" src="https://img.shields.io/badge/UI-Windows%2098-8ecae6?style=for-the-badge" />
+</p>
 
 Editor de retro-graphics e efeitos 8-bit em tempo real no navegador, com pipeline de processamento de imagem e vídeo, quantização de cores, dithering, ASCII/matrix e pós-processamento em WebGL.
 
@@ -13,6 +25,9 @@ A arquitetura prioriza três objetivos principais:
 - uma interface inspirada em software clássico, mantendo o código limpo e modular.
 
 ## Principais funcionalidades
+<p align="center">
+  <img src="docs/palettes.jpg" alt="Grid mostrando as diferentes combinações de paleta e algoritmo" width="900" />
+</p>
 
 - Upload de imagens, GIFs e vídeos curtos
 - Redimensionamento de mídia para resolução alvo controlada
